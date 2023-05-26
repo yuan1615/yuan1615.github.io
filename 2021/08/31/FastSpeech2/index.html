@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="摘要 FastSpeech2：基于Transformer的非自回归TTS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FastSpeech2">
+<meta property="og:url" content="https://yuan1615.github.io/2021/08/31/FastSpeech2/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="摘要 FastSpeech2：基于Transformer的非自回归TTS">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2021/08/31/FastSpeech2/FastSpeech2.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2021/08/31/FastSpeech2/FastSpeech.jpg">
+<meta property="article:published_time" content="2021-08-31T07:51:05.000Z">
+<meta property="article:modified_time" content="2021-09-08T08:40:13.332Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2021/08/31/FastSpeech2/FastSpeech2.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2021/08/31/FastSpeech2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>FastSpeech2 | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/08/31/FastSpeech2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          FastSpeech2
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-08-31 15:51:05" itemprop="dateCreated datePublished" datetime="2021-08-31T15:51:05+08:00">2021-08-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-09-08 16:40:13" itemprop="dateModified" datetime="2021-09-08T16:40:13+08:00">2021-09-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
+<p><strong>FastSpeech2</strong>：基于Transformer的非自回归TTS</p>
+<span id="more"></span>
+<h2 id="paper"><a class="markdownIt-Anchor" href="#paper"></a> Paper</h2>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2006.04558">https://arxiv.org/abs/2006.04558</a></p>
+<h2 id="代码详解"><a class="markdownIt-Anchor" href="#代码详解"></a> 代码详解</h2>
+<p><a target="_blank" rel="noopener" href="https://github.com/ming024/FastSpeech2">https://github.com/ming024/FastSpeech2</a>该代码使用 <em>pytorch</em>框架</p>
+<h3 id="1-dataset-与-dataloader"><a class="markdownIt-Anchor" href="#1-dataset-与-dataloader"></a> 1. Dataset 与 DataLoader</h3>
+<p>Dataset 是 PyTorch 中用来表示数据集的一个抽象类，我们的数据集可以用这个类来表示，至少复写下面两个方法即可：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">__len__: 数据集大小</span><br><span class="line">__getitem__: 可以通过下标的方式来获取第 i 个数据</span><br></pre></td></tr></table></figure>
+<p>FastSpeech2代码中通过 <code>preprocess_config</code> 和 <code>train_config</code> 以及之前处理的<code>train.txt</code>文件构建数据集</p>
+<ul>
+<li>train.txt 构造如下(以标贝数据为例)：数据以 | 分割，包含了“文件名”|“说话人”|“音素”|“拼音”，对应代码中变量 basename, speaker, text, raw_text</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">008894|BZNSYP|&#123;sh e3 d e2 sh e3 d e2 sp y iou2 sh e3 c ai2 y iou3 d e2 sp sh e3 d e5 sp sh e3 de2 sp g ai1 sh e3 d e5 y iao4 sh e3 sp g ai1 d e2 d e5 y iao4 d e2&#125;|she3 de2 she3 de2 you2 she3 cai2 you3 de2 she3 de5 she3 de2 gai1 she3 de5 yao4 she3 gai1 de2 de5 yao4 de2</span><br></pre></td></tr></table></figure>
+<p>speaker_map 保存在 speakers.json 中，保存了 speaker 对应的 id：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;&quot;BZNSYP&quot;: 0&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，定义 <code>__len__</code>，这里根据<code>text</code>这个列表的 len()计算即可；</p>
+<p>其次，定义<code>__getitem__</code>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&quot;id&quot;: basename,                 # 008565</span><br><span class="line">&quot;speaker&quot;: speaker_id,          # 0</span><br><span class="line">&quot;text&quot;: phone,                  # [12, 31, 213, 34, 41]</span><br><span class="line">&quot;raw_text&quot;: raw_text,           # she3 de2 she3 de2 you2 she3 cai2</span><br><span class="line">&quot;mel&quot;: mel,                     # np.array (466, 80) 466不固定</span><br><span class="line">&quot;pitch&quot;: pitch,                 # np.array (55, ) 55不固定</span><br><span class="line">&quot;energy&quot;: energy,               # np.array (55, )</span><br><span class="line">&quot;duration&quot;: duration,           # np.array (55, )</span><br></pre></td></tr></table></figure>
+<p>注意：mel、pitch、energy与duration是预处理保存的npy文件，对应的维数与 音频处理 中的帧、窗口等相关。后续详细介绍 <code>preprocess.py</code>文件的时候再解释。</p>
+<p>解释数据细节：</p>
+<ul>
+<li>phone<br>
+这里表示的是音素对应的序号，有中文音素、英文音素及特殊字符，后续输入网络时，会把这些序号embedding到一个序列。<br>
+音素到序号对应表如下：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"># 英文共包含 84 个音素字符，来自cmudict，借鉴自 tacotron(https:&#x2F;&#x2F;github.com&#x2F;keithito&#x2F;tacotron)</span><br><span class="line">valid_symbols &#x3D; [</span><br><span class="line">    &quot;AA&quot;,</span><br><span class="line">    &quot;AA0&quot;,</span><br><span class="line">    &quot;AA1&quot;,</span><br><span class="line">    ......</span><br><span class="line">    &quot;Z&quot;,</span><br><span class="line">    &quot;ZH&quot;,</span><br><span class="line">]</span><br><span class="line"># 中文包含开头 23 个字符，结尾 185 个字符，再包括一个儿化音字符 “rr”，中文共209个字符，来自 pinyin</span><br><span class="line">initials &#x3D; [</span><br><span class="line">    &quot;b&quot;,</span><br><span class="line">    &quot;c&quot;,</span><br><span class="line">    ......</span><br><span class="line">    &quot;z&quot;,</span><br><span class="line">    &quot;zh&quot;,</span><br><span class="line">]</span><br><span class="line">finals &#x3D; [</span><br><span class="line">    &quot;a1&quot;,</span><br><span class="line">    &quot;a2&quot;,</span><br><span class="line">    &quot;a3&quot;,</span><br><span class="line">    ......</span><br><span class="line">    &quot;vn4&quot;,</span><br><span class="line">    &quot;vn5&quot;,</span><br><span class="line">]</span><br><span class="line"># 特殊的字符如下</span><br><span class="line">_pad &#x3D; &quot;_&quot;</span><br><span class="line">_punctuation &#x3D; &quot;!&#39;(),.:;? &quot;</span><br><span class="line">_special &#x3D; &quot;-&quot;</span><br><span class="line">_letters &#x3D; &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&quot;</span><br><span class="line">_silences &#x3D; [&quot;@sp&quot;, &quot;@spn&quot;, &quot;@sil&quot;]</span><br><span class="line"></span><br><span class="line"># 音素中都是以@开头</span><br><span class="line">_arpabet &#x3D; [&quot;@&quot; + s for s in cmudict.valid_symbols]</span><br><span class="line">_pinyin &#x3D; [&quot;@&quot; + s for s in pinyin.valid_symbols]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Dataset 中的 <strong>collate_fn</strong> 函数的功能，以及本代码中<strong>collate_fn</strong>：</p>
+<p>collate_fn 的输入是一批样本，对batch进行处理，在这里我们text的长度，mel、ptich等，每个样本的长度是不一样的，我们需要将每一个 batch 中各样本长度 pad 到一致！这就有了 reprocess 和 collate_fn 这两个方法了。</p>
+<p><code>reprocess</code>这个函数发挥了主要功能：pad，返回的结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ids,                      # list, [&#39;004717&#39;, &#39;008813&#39;, ...] 一个batchsize的 文件名</span><br><span class="line">raw_texts,                # list, 一个batchsize的 拼音&#x2F;英文 序列</span><br><span class="line">speakers,                 # array, 说话人对应的标号 [0, 0, ...]</span><br><span class="line">texts,                    # array，pad 后的 音素对应的标号，按照0进行pad</span><br><span class="line">text_lens,                # array, 每个样本texts的长度 [34, 33, ... 12] </span><br><span class="line">max(text_lens),           # 最大长度， 34</span><br><span class="line">mels,                     # np.array, (16, max_len, 80)</span><br><span class="line">mel_lens,                 # np.array, 每个样本mels 的长度</span><br><span class="line">max(mel_lens),            # 最大长度， 372</span><br><span class="line">pitches,                  # 和 text 的长度是对应的, 短的样本 pad 0</span><br><span class="line">energies,                 # 同 pitches</span><br><span class="line">durations,                # 同 durations</span><br></pre></td></tr></table></figure>
+<p><code>collate_fn</code>这个函数功能：借助reprocess，同时 进行 sort 和 drop_last，返回结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">list, [(reprocess的结果) * group_size], </span><br></pre></td></tr></table></figure>
+<p>DatLoader 本质是一个可迭代对象，使用iter（）访问，每次返回一个batchsize的数据，提供了shuffle。</p>
+<h3 id="2-model-and-optimizer模型和优化器"><a class="markdownIt-Anchor" href="#2-model-and-optimizer模型和优化器"></a> 2. Model and Optimizer(模型和优化器)</h3>
+<p>放一张FastSpeech2论文里的模型框架图吧！<br>
+<img src="/2021/08/31/FastSpeech2/FastSpeech2.jpg" alt="FastSpeech2"></p>
+<p>主要的结构是：Encoder + <strong>Variance Adaptor</strong> + Mel-spectrogram Decoder</p>
+<ul>
+<li>Encoder：变异Transformer</li>
+<li>Variance Adaptor:</li>
+<li>Mel-spectrogram Decoder: 变异Transformer</li>
+</ul>
+<p>前向传播 forward：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">speakers,               # 同 reprocess 返回结果</span><br><span class="line">texts,</span><br><span class="line">src_lens,</span><br><span class="line">max_src_len,</span><br><span class="line">mels&#x3D;None,</span><br><span class="line">mel_lens&#x3D;None,</span><br><span class="line">max_mel_len&#x3D;None,</span><br><span class="line">p_targets&#x3D;None,</span><br><span class="line">e_targets&#x3D;None,</span><br><span class="line">d_targets&#x3D;None,</span><br><span class="line">p_control&#x3D;1.0,          # 控制 pitch</span><br><span class="line">e_control&#x3D;1.0,          # 控制 energy</span><br><span class="line">d_control&#x3D;1.0,          # 控制 duration</span><br></pre></td></tr></table></figure>
+<p>首先要介绍这个 <strong>mask</strong>，由于我们之前将 texts 中长度不一样的进行了 pad，那么在以后的计算中是要mask的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">get_mask_from_lengths:</span><br><span class="line">输入：src_lens （一个batch中每一个样本text的长度）, max_src_len（一个batch中text的最大长度）</span><br><span class="line">输出：np.array, shape&#x3D;(batch_size, max_src_len), 对应的元素为是否应该被 mask</span><br></pre></td></tr></table></figure>
+<p>举个例子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">src_lens &#x3D; tensor([1, 3, 5, 6])</span><br><span class="line">max_src_len &#x3D; 6</span><br><span class="line"></span><br><span class="line">ids &#x3D; tensor([[0, 1, 2, 3, 4, 5],</span><br><span class="line">              [0, 1, 2, 3, 4, 5],</span><br><span class="line">              [0, 1, 2, 3, 4, 5],</span><br><span class="line">              [0, 1, 2, 3, 4, 5]])</span><br><span class="line"></span><br><span class="line">src_lens_expand &#x3D; tensor([[1, 1, 1, 1, 1, 1],</span><br><span class="line">                         [3, 3, 3, 3, 3, 3],</span><br><span class="line">                         [5, 5, 5, 5, 5, 5],</span><br><span class="line">                         [6, 6, 6, 6, 6, 6]])</span><br><span class="line">mask &#x3D; ids &gt;&#x3D; src_lens_expand &#x3D; \</span><br><span class="line">tensor([[False,  True,  True,  True,  True,  True],</span><br><span class="line">        [False, False, False,  True,  True,  True],</span><br><span class="line">        [False, False, False, False, False,  True],</span><br><span class="line">        [False, False, False, False, False, False]])</span><br><span class="line">shape 是 (barch_size, max_src_len)</span><br><span class="line">这些Ture都是原来Pad的，后续计算需要mask的！</span><br></pre></td></tr></table></figure>
+<p>接下来，看一下<strong>Encoder</strong>这里详细的过程了，顺便介绍一下Transformer结构，以及看一看Q、K、V在这里到底学到的是什么东东！</p>
+<ul>
+<li>src_word_emb：将 text 中的音素，对应到一个 256 维的向量，利用pytorch中的nn.Embedding即可。</li>
+<li>get_sinusoid_encoding_table： Sinusoid position encoding table</li>
+</ul>
+<p>这个 Positional Encoding 是 Transformer 特有的，论文中提到由于没有用到RNN和CNN提取特征，所以没有很好的应用位置信息，所以需要在 input Embedding 后加上 Positional Encodeing。公式如下：</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>P</mi><msub><mi>E</mi><mrow><mo>(</mo><mi>p</mi><mi>o</mi><mi>s</mi><mo separator="true">,</mo><mn>2</mn><mi>i</mi><mo>)</mo></mrow></msub><mo>=</mo><mi>s</mi><mi>i</mi><mi>n</mi><mo>(</mo><mi>p</mi><mi>o</mi><mi>s</mi><mi mathvariant="normal">/</mi><mn>1</mn><mn>0</mn><mn>0</mn><mn>0</mn><msup><mn>0</mn><mrow><mo>(</mo><mn>2</mn><mi>i</mi><mi mathvariant="normal">/</mi><msub><mi>d</mi><mrow><mi>m</mi><mi>o</mi><mi>d</mi><mi>e</mi><mi>l</mi></mrow></msub><mo>)</mo></mrow></msup><mo>)</mo></mrow><annotation encoding="application/x-tex">PE_{(pos, 2i)} = sin(pos/10000^{(2i/d_{model})}) 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.938em;"></span><span class="strut bottom" style="height:1.2932em;vertical-align:-0.3551999999999999em;"></span><span class="base displaystyle textstyle uncramped"><span class="mord mathit" style="margin-right:0.13889em;">P</span><span class="mord"><span class="mord mathit" style="margin-right:0.05764em;">E</span><span class="vlist"><span style="top:0.18019999999999992em;margin-right:0.05em;margin-left:-0.05764em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mopen">(</span><span class="mord mathit">p</span><span class="mord mathit">o</span><span class="mord mathit">s</span><span class="mpunct">,</span><span class="mord mathrm">2</span><span class="mord mathit">i</span><span class="mclose">)</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mrel">=</span><span class="mord mathit">s</span><span class="mord mathit">i</span><span class="mord mathit">n</span><span class="mopen">(</span><span class="mord mathit">p</span><span class="mord mathit">o</span><span class="mord mathit">s</span><span class="mord mathrm">/</span><span class="mord mathrm">1</span><span class="mord mathrm">0</span><span class="mord mathrm">0</span><span class="mord mathrm">0</span><span class="mord"><span class="mord mathrm">0</span><span class="vlist"><span style="top:-0.413em;margin-right:0.05em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle uncramped"><span class="mord scriptstyle uncramped"><span class="mopen">(</span><span class="mord mathrm">2</span><span class="mord mathit">i</span><span class="mord mathrm">/</span><span class="mord"><span class="mord mathit">d</span><span class="vlist"><span style="top:0.15122857142857138em;margin-right:0.07142857142857144em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-scriptstyle scriptscriptstyle cramped"><span class="mord scriptscriptstyle cramped"><span class="mord mathit">m</span><span class="mord mathit">o</span><span class="mord mathit">d</span><span class="mord mathit">e</span><span class="mord mathit" style="margin-right:0.01968em;">l</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mclose">)</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>P</mi><msub><mi>E</mi><mrow><mo>(</mo><mi>p</mi><mi>o</mi><mi>s</mi><mo separator="true">,</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></msub><mo>=</mo><mi>c</mi><mi>o</mi><mi>s</mi><mo>(</mo><mi>p</mi><mi>o</mi><mi>s</mi><mi mathvariant="normal">/</mi><mn>1</mn><mn>0</mn><mn>0</mn><mn>0</mn><msup><mn>0</mn><mrow><mo>(</mo><mn>2</mn><mi>i</mi><mi mathvariant="normal">/</mi><msub><mi>d</mi><mrow><mi>m</mi><mi>o</mi><mi>d</mi><mi>e</mi><mi>l</mi></mrow></msub><mo>)</mo></mrow></msup><mo>)</mo></mrow><annotation encoding="application/x-tex">PE_{(pos, 2i+1)} = cos(pos/10000^{(2i/d_{model})})
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.938em;"></span><span class="strut bottom" style="height:1.2932em;vertical-align:-0.3551999999999999em;"></span><span class="base displaystyle textstyle uncramped"><span class="mord mathit" style="margin-right:0.13889em;">P</span><span class="mord"><span class="mord mathit" style="margin-right:0.05764em;">E</span><span class="vlist"><span style="top:0.18019999999999992em;margin-right:0.05em;margin-left:-0.05764em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mopen">(</span><span class="mord mathit">p</span><span class="mord mathit">o</span><span class="mord mathit">s</span><span class="mpunct">,</span><span class="mord mathrm">2</span><span class="mord mathit">i</span><span class="mbin">+</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mrel">=</span><span class="mord mathit">c</span><span class="mord mathit">o</span><span class="mord mathit">s</span><span class="mopen">(</span><span class="mord mathit">p</span><span class="mord mathit">o</span><span class="mord mathit">s</span><span class="mord mathrm">/</span><span class="mord mathrm">1</span><span class="mord mathrm">0</span><span class="mord mathrm">0</span><span class="mord mathrm">0</span><span class="mord"><span class="mord mathrm">0</span><span class="vlist"><span style="top:-0.413em;margin-right:0.05em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle uncramped"><span class="mord scriptstyle uncramped"><span class="mopen">(</span><span class="mord mathrm">2</span><span class="mord mathit">i</span><span class="mord mathrm">/</span><span class="mord"><span class="mord mathit">d</span><span class="vlist"><span style="top:0.15122857142857138em;margin-right:0.07142857142857144em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-scriptstyle scriptscriptstyle cramped"><span class="mord scriptscriptstyle cramped"><span class="mord mathit">m</span><span class="mord mathit">o</span><span class="mord mathit">d</span><span class="mord mathit">e</span><span class="mord mathit" style="margin-right:0.01968em;">l</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mclose">)</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>这个参数是不需要学习的，由于sin与cos的关系，PE_{(pos + k)}与PE_{(pos)}可以很容易的表示成线性关系。</p>
+<ul>
+<li>FFTBlock：MultiHeadAttention 和 PositionwiseFeedForward 构成</li>
+</ul>
+<p>注意力机制：</p>
+<p>&lt;后续整理&gt;，相关内容可参考李宏毅ML中的介绍 <a target="_blank" rel="noopener" href="https://speech.ee.ntu.edu.tw/~hylee/ml/2021-spring.html">self attention</a>.</p>
+<p><strong>VarianceAdaptor</strong> 是 FastSpeech2 的核心，主要分为以下三个部分：</p>
+<ul>
+<li>LengthRegulator（这个FastSpeech就有了）</li>
+<li>duration_predictor（这个是比较关键的）</li>
+<li>pitch_predictor and energy_predictor</li>
+</ul>
+<p>下图是FastSpeech的流程图，可以更好的理解 LengthRegulator：<br>
+<img src="/2021/08/31/FastSpeech2/FastSpeech.jpg" alt="FastSpeech"></p>
+<p>duation and ptich and energy predictors 都用了一个框架：</p>
+<ul>
+<li>两次 {Conv1D + ReLU + LN + Dropout} + Linear Layer<br>
+这里需要注意的是，Encoder解码得到的输出维度是 (16, max_text_len, 256)，在进行卷积运算时，需要转换为 (16, 256, max_text_len), 利用 <code>x = x.contiguous().transpose(1, 2)</code> 即可实现，卷积运算完成之后进行后续 ReLU … 等操作！（这个是由于 pytorch 框架导致的），在conv1d中输入是 [batch, channels, w]，conv2d中输入是 [batch, channels, H, W]。</li>
+</ul>
+<p>接下来，Encoder 的输出分别输入到 duation、pitch和energy的预测器中，输出结果为 [batch, max_text_len],<br>
+这里将pitch 和 energy 的预测值加到了 Encoder 的输出上，加的过程用到了pitch_embedding.</p>
+<p>由于pitch和energy都是一个值，这里用到了Pytorch中一个不是特别常见的函数torch.bucketize(input, boundaries, *, out_int32=False, right=False, out=None) → Tensor。这是Pytorch中的分桶函数，boundaries确定了各个桶的边界，是一个单调递增向量，用于划分input，并返回input所属桶的索引，桶索引从0开始。然后利用nn.Embedding 将其映射到 256 维。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">self.pitch_embedding &#x3D; nn.Embedding(</span><br><span class="line">    n_bins, model_config[&quot;transformer&quot;][&quot;encoder_hidden&quot;]</span><br><span class="line">)</span><br><span class="line">self.pitch_bins &#x3D; nn.Parameter(</span><br><span class="line">                torch.linspace(pitch_min, pitch_max, n_bins - 1),</span><br><span class="line">                requires_grad&#x3D;False,</span><br><span class="line">            )</span><br><span class="line">self.pitch_embedding(</span><br><span class="line">                torch.bucketize(prediction, self.pitch_bins)</span><br><span class="line">            )</span><br></pre></td></tr></table></figure>
+<p>将 Encoder 的输出 加 ptich和energy的值，利用LR对齐到mel_len。</p>
+<p>LengthRegulator介绍：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">def expand(self, batch, predicted):</span><br><span class="line">    out &#x3D; list()</span><br><span class="line">    # print(batch.shape) 这里batch 代表一个样本 shpe &#x3D; (max_len_text, 256)</span><br><span class="line">    for i, vec in enumerate(batch):</span><br><span class="line">        # print(i)  # 这里是每个 音素</span><br><span class="line">        # print(vec.shape) 256</span><br><span class="line">        expand_size &#x3D; predicted[i].item() # 3</span><br><span class="line">        out.append(vec.expand(max(int(expand_size), 0), -1))  # [(3, 256), (4, 256), (2, 256), ...]  代表 每个音素</span><br><span class="line">    out &#x3D; torch.cat(out, 0)  # 按照 0 轴进行拼接</span><br><span class="line"></span><br><span class="line">    return out</span><br></pre></td></tr></table></figure>
+<p>Decoder 与 Encoder结构一样，不过变成了 6 层。</p>
+<p>mel_linear 将 256 维数 变为 n_mel_channels: 80。</p>
+<p>postnet 精细化 mel 谱，这是 Tacotron2 留下来的，5个1维卷积层</p>
+<p>至此，FastSpeech2 的网络结构介绍完毕！</p>
+<hr>
+<ul>
+<li>Optimizer 优化器</li>
+</ul>
+<p>这里利用了 Adam 算法，又加入了一些其他功能，详细介绍如下：</p>
+<p>超参数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">optimizer:</span><br><span class="line">  batch_size: 16</span><br><span class="line">  betas: [0.9, 0.98]</span><br><span class="line">  eps: 0.000000001</span><br><span class="line">  weight_decay: 0.0</span><br><span class="line">  grad_clip_thresh: 1.0  # Clipping gradients to avoid gradient explosion</span><br><span class="line">  grad_acc_step: 1  # Clipping gradients to avoid gradient explosion</span><br><span class="line">  warm_up_step: 4000  # 开始降低学习率</span><br><span class="line">  anneal_steps: [300000, 400000, 500000]</span><br><span class="line">  anneal_rate: 0.3  # 30W 以后，还要降低学习率</span><br></pre></td></tr></table></figure>
+<p>定义优化器：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">torch.optim.Adam(</span><br><span class="line">            model.parameters(),</span><br><span class="line">            betas&#x3D;train_config[&quot;optimizer&quot;][&quot;betas&quot;],</span><br><span class="line">            eps&#x3D;train_config[&quot;optimizer&quot;][&quot;eps&quot;],</span><br><span class="line">            weight_decay&#x3D;train_config[&quot;optimizer&quot;][&quot;weight_decay&quot;],</span><br><span class="line">        )</span><br></pre></td></tr></table></figure>
+<p>初始化学习率：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">encoder_hidden &#x3D; 256</span><br><span class="line">self.init_lr &#x3D; np.power(model_config[&quot;transformer&quot;][&quot;encoder_hidden&quot;], -0.5)  # 0.0625</span><br></pre></td></tr></table></figure>
+<p>更新学习率：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">按学习步骤进行降低</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="3-利用-tensorboard-可视化"><a class="markdownIt-Anchor" href="#3-利用-tensorboard-可视化"></a> 3. 利用 TensorBoard 可视化</h3>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">train_logger &#x3D; SummaryWriter(train_log_path)</span><br><span class="line">log(train_logger, step, losses&#x3D;losses)</span><br><span class="line">log(</span><br><span class="line">    train_logger,</span><br><span class="line">    fig&#x3D;fig,</span><br><span class="line">    tag&#x3D;&quot;Training&#x2F;step_&#123;&#125;_&#123;&#125;&quot;.format(step, tag),</span><br><span class="line">)</span><br><span class="line">log(</span><br><span class="line">    train_logger,</span><br><span class="line">    audio&#x3D;wav_reconstruction,</span><br><span class="line">    sampling_rate&#x3D;sampling_rate,</span><br><span class="line">    tag&#x3D;&quot;Training&#x2F;step_&#123;&#125;_&#123;&#125;_reconstructed&quot;.format(step, tag),</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="4-音频-文本数据处理"><a class="markdownIt-Anchor" href="#4-音频-文本数据处理"></a> 4. 音频、文本数据处理</h3>
+<ol>
+<li>将音频及文本文件处理成 &lt;text, wav&gt;对儿文件，为后续MFA及提取mel、duration、pitch及enengy做准备。<br>
+下面以baker数据为例进行介绍：<br>
+这里主要是对原始音频按照sampling_rate进行了采样，并进行了最大值“归一化”。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">import os</span><br><span class="line"></span><br><span class="line">import librosa</span><br><span class="line">import numpy as np</span><br><span class="line">from scipy.io import wavfile</span><br><span class="line">from tqdm import tqdm</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def prepare_align(config):</span><br><span class="line">    in_dir &#x3D; config[&quot;path&quot;][&quot;corpus_path&quot;]  # 原始音频保存位置</span><br><span class="line">    out_dir &#x3D; config[&quot;path&quot;][&quot;raw_path&quot;]  # &lt;.lab, .wav&gt;保存位置</span><br><span class="line">    sampling_rate &#x3D; config[&quot;preprocessing&quot;][&quot;audio&quot;][&quot;sampling_rate&quot;]  # 采样率</span><br><span class="line">    max_wav_value &#x3D; config[&quot;preprocessing&quot;][&quot;audio&quot;][&quot;max_wav_value&quot;]  # 16bit 32768</span><br><span class="line">    speaker &#x3D; &quot;BZNSYP&quot;  # 说话人</span><br><span class="line">    i &#x3D; 1</span><br><span class="line">    # 打开保存的 标注文件，获取每一个样本的拼音</span><br><span class="line">    with open(os.path.join(in_dir, &quot;ProsodyLabeling&quot;, &quot;000001-010000.txt&quot;), encoding&#x3D;&quot;utf-8&quot;) as f:</span><br><span class="line">        for line in tqdm(f):</span><br><span class="line">            if i % 2 &#x3D;&#x3D; 1:</span><br><span class="line">                wav_name &#x3D; line[:6]</span><br><span class="line">                wav_path &#x3D; os.path.join(in_dir, &quot;Wave&quot;, &quot;&#123;&#125;.wav&quot;.format(wav_name))</span><br><span class="line">                if os.path.exists(wav_path):</span><br><span class="line">                    os.makedirs(os.path.join(out_dir, speaker), exist_ok&#x3D;True)</span><br><span class="line">                    wav, _ &#x3D; librosa.load(wav_path, sampling_rate)  # 按照采样率 22050进行采样</span><br><span class="line">                    wav &#x3D; wav &#x2F; max(abs(wav)) * max_wav_value  # 对wav进行归一化</span><br><span class="line">                    wavfile.write(</span><br><span class="line">                        os.path.join(out_dir, speaker, &quot;&#123;&#125;.wav&quot;.format(wav_name)),</span><br><span class="line">                        sampling_rate,</span><br><span class="line">                        wav.astype(np.int16),</span><br><span class="line">                    )  # 保存wav文件</span><br><span class="line">            if i % 2 &#x3D;&#x3D; 0:</span><br><span class="line">                text &#x3D; line.strip(&quot;\n&quot;).strip(&quot;\t&quot;)</span><br><span class="line">                with open(</span><br><span class="line">                        os.path.join(out_dir, speaker, &quot;&#123;&#125;.lab&quot;.format(wav_name)),</span><br><span class="line">                        &quot;w&quot;,</span><br><span class="line">                ) as f1:</span><br><span class="line">                    f1.write(text)  # 保存 拼音 文件</span><br><span class="line">            i +&#x3D; 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>
+<p>利用 MFA 工具 提取音素到mel的对齐信息 TextGrid。具体见本博客中 MFA安装及使用。</p>
+</li>
+<li>
+<p>利用 TextGrid 与 &lt;.lab, .wav&gt;获得 mel, duration, pitch, energy 及 stats, speaker 及 train, val 数据集</p>
+</li>
+</ol>
+<p>下面以单一样本 LJS001-0001 为例进行解释：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"># 首先利用 &#96;tgt&#96; 包读入 TextGrid</span><br><span class="line">import tgt</span><br><span class="line">textgrid &#x3D; tgt.io.read_textgrid(tg_path)</span><br><span class="line">tier &#x3D; textgrid.get_tier_by_name(&quot;phones&quot;)</span><br><span class="line"></span><br><span class="line"># 其次利用得到的tier计算 phones, duration, start_time, end_time</span><br><span class="line"># 这里将 开头及结尾 静音 silence 进行了过滤</span><br><span class="line">    def get_alignment(self, tier):</span><br><span class="line">        sil_phones &#x3D; [&quot;sil&quot;, &quot;sp&quot;, &quot;spn&quot;]</span><br><span class="line"></span><br><span class="line">        phones &#x3D; []</span><br><span class="line">        durations &#x3D; []</span><br><span class="line">        start_time &#x3D; 0</span><br><span class="line">        end_time &#x3D; 0</span><br><span class="line">        end_idx &#x3D; 0</span><br><span class="line">        for t in tier._objects:</span><br><span class="line">            s, e, p &#x3D; t.start_time, t.end_time, t.text</span><br><span class="line"></span><br><span class="line">            # Trim leading silences</span><br><span class="line">            if phones &#x3D;&#x3D; []:</span><br><span class="line">                if p in sil_phones:</span><br><span class="line">                    continue</span><br><span class="line">                else:</span><br><span class="line">                    start_time &#x3D; s</span><br><span class="line"></span><br><span class="line">            if p not in sil_phones:</span><br><span class="line">                # For ordinary phones</span><br><span class="line">                phones.append(p)</span><br><span class="line">                end_time &#x3D; e</span><br><span class="line">                end_idx &#x3D; len(phones)</span><br><span class="line">            else:</span><br><span class="line">                # For silent phones</span><br><span class="line">                phones.append(p)</span><br><span class="line"></span><br><span class="line">            durations.append(</span><br><span class="line">                int(</span><br><span class="line">                    np.round(e * self.sampling_rate &#x2F; self.hop_length)</span><br><span class="line">                    - np.round(s * self.sampling_rate &#x2F; self.hop_length)</span><br><span class="line">                )</span><br><span class="line">            )</span><br><span class="line"></span><br><span class="line">        # Trim tailing silences</span><br><span class="line">        phones &#x3D; phones[:end_idx]</span><br><span class="line">        durations &#x3D; durations[:end_idx]</span><br><span class="line"></span><br><span class="line">        return phones, durations, start_time, end_time</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这里 duration 是 每个音素对应的帧数，需要用到sampling_rate 与 hop_length.<br>
+pitch 和 energy 是wav文件计算的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># 计算 pitch</span><br><span class="line">import pyworld as pw</span><br><span class="line"></span><br><span class="line">pitch, t &#x3D; pw.dio(</span><br><span class="line">    wav.astype(np.float64),</span><br><span class="line">    self.sampling_rate,</span><br><span class="line">    frame_period&#x3D;self.hop_length &#x2F; self.sampling_rate * 1000,</span><br><span class="line">)</span><br><span class="line">pitch &#x3D; pw.stonemask(wav.astype(np.float64), pitch, t, self.sampling_rate)</span><br><span class="line"></span><br><span class="line">pitch &#x3D; pitch[: sum(duration)]</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 利用 Tacotron 中 STFT  从wav中获得mel与energy</span><br><span class="line">mel_spectrogram, energy &#x3D; Audio.tools.get_mel_from_wav(wav, self.STFT)</span><br><span class="line">mel_spectrogram &#x3D; mel_spectrogram[:, : sum(duration)]</span><br><span class="line">energy &#x3D; energy[: sum(duration)]</span><br></pre></td></tr></table></figure>
+<p>这里计算的 pitch 和 energy 都是帧级别的，不是音素级别的，所以要对 原始 pitch 和 energy 在 音素级别取平均：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">from scipy.interpolate import interp1d  # 插值函数</span><br><span class="line"></span><br><span class="line"># 把那些 pitch 为 0 的进行了线性插值！，然后再按照音素级别取平均</span><br><span class="line"></span><br><span class="line">nonzero_ids &#x3D; np.where(pitch !&#x3D; 0)[0]</span><br><span class="line">interp_fn &#x3D; interp1d(</span><br><span class="line">    nonzero_ids,</span><br><span class="line">    pitch[nonzero_ids],</span><br><span class="line">    fill_value&#x3D;(pitch[nonzero_ids[0]], pitch[nonzero_ids[-1]]),</span><br><span class="line">    bounds_error&#x3D;False,</span><br><span class="line">)</span><br><span class="line">pitch &#x3D; interp_fn(np.arange(0, len(pitch)))</span><br><span class="line"></span><br><span class="line"># Phoneme-level average</span><br><span class="line">pos &#x3D; 0</span><br><span class="line">for i, d in enumerate(duration):</span><br><span class="line">    if d &gt; 0:</span><br><span class="line">        pitch[i] &#x3D; np.mean(pitch[pos : pos + d])</span><br><span class="line">    else:</span><br><span class="line">        pitch[i] &#x3D; 0</span><br><span class="line">    pos +&#x3D; d</span><br><span class="line">pitch &#x3D; pitch[: len(duration)]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>保存 .npy 文件，方便后续训练模型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># Save files</span><br><span class="line">dur_filename &#x3D; &quot;&#123;&#125;-duration-&#123;&#125;.npy&quot;.format(speaker, basename)</span><br><span class="line">np.save(os.path.join(self.out_dir, &quot;duration&quot;, dur_filename), duration)</span><br><span class="line"></span><br><span class="line">pitch_filename &#x3D; &quot;&#123;&#125;-pitch-&#123;&#125;.npy&quot;.format(speaker, basename)</span><br><span class="line">np.save(os.path.join(self.out_dir, &quot;pitch&quot;, pitch_filename), pitch)</span><br><span class="line"></span><br><span class="line">energy_filename &#x3D; &quot;&#123;&#125;-energy-&#123;&#125;.npy&quot;.format(speaker, basename)</span><br><span class="line">np.save(os.path.join(self.out_dir, &quot;energy&quot;, energy_filename), energy)</span><br><span class="line"></span><br><span class="line">mel_filename &#x3D; &quot;&#123;&#125;-mel-&#123;&#125;.npy&quot;.format(speaker, basename)</span><br><span class="line">np.save(</span><br><span class="line">    os.path.join(self.out_dir, &quot;mel&quot;, mel_filename),</span><br><span class="line">    mel_spectrogram.T,</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/20/LinuxCommands/" rel="prev" title="服务器常用命令汇总">
+      <i class="fa fa-chevron-left"></i> 服务器常用命令汇总
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/09/09/Clash/" rel="next" title="Clash">
+      Clash <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#paper"><span class="nav-number">1.1.</span> <span class="nav-text"> Paper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text"> 代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-dataset-%E4%B8%8E-dataloader"><span class="nav-number">1.2.1.</span> <span class="nav-text"> 1. Dataset 与 DataLoader</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-model-and-optimizer%E6%A8%A1%E5%9E%8B%E5%92%8C%E4%BC%98%E5%8C%96%E5%99%A8"><span class="nav-number">1.2.2.</span> <span class="nav-text"> 2. Model and Optimizer(模型和优化器)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%88%A9%E7%94%A8-tensorboard-%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="nav-number">1.2.3.</span> <span class="nav-text"> 3. 利用 TensorBoard 可视化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E9%9F%B3%E9%A2%91-%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86"><span class="nav-number">1.2.4.</span> <span class="nav-text"> 4. 音频、文本数据处理</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="摘要 Tacotron2：Tacotron 的改良版。Tacotron应该是第一个基于深度学习的端到端语音合成模型。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tacotron2">
+<meta property="og:url" content="https://yuan1615.github.io/2021/10/08/Tacotron2/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="摘要 Tacotron2：Tacotron 的改良版。Tacotron应该是第一个基于深度学习的端到端语音合成模型。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2021/10/08/Tacotron2/tacotron2.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2021/10/08/Tacotron2/attention.jpg">
+<meta property="article:published_time" content="2021-10-08T07:50:49.000Z">
+<meta property="article:modified_time" content="2021-10-11T02:16:54.337Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2021/10/08/Tacotron2/tacotron2.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2021/10/08/Tacotron2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Tacotron2 | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/10/08/Tacotron2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Tacotron2
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-10-08 15:50:49" itemprop="dateCreated datePublished" datetime="2021-10-08T15:50:49+08:00">2021-10-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-10-11 10:16:54" itemprop="dateModified" datetime="2021-10-11T10:16:54+08:00">2021-10-11</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
+<p><strong>Tacotron2</strong>：Tacotron 的改良版。Tacotron应该是第一个基于深度学习的端到端语音合成模型。</p>
+<span id="more"></span>
+<h1 id="论文及代码"><a class="markdownIt-Anchor" href="#论文及代码"></a> 论文及代码</h1>
+<h2 id="论文"><a class="markdownIt-Anchor" href="#论文"></a> 论文</h2>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1712.05884.pdf">Natural TTS Synthesis By Conditioning Wavenet On Mel Spectrogram Predictions</a></p>
+<h2 id="代码"><a class="markdownIt-Anchor" href="#代码"></a> 代码</h2>
+<p><a target="_blank" rel="noopener" href="https://github.com/NVIDIA/tacotron2">https://github.com/NVIDIA/tacotron2</a></p>
+<h1 id="详细介绍"><a class="markdownIt-Anchor" href="#详细介绍"></a> 详细介绍</h1>
+<h2 id="模型"><a class="markdownIt-Anchor" href="#模型"></a> 模型</h2>
+<p>由Encoder、Location Sensitive Attention 和 Decoder、PostNet组成，解码器是WaveNet。<br>
+<img src="/2021/10/08/Tacotron2/tacotron2.jpg" alt="tacotron2.jpg"></p>
+<h3 id="encoder"><a class="markdownIt-Anchor" href="#encoder"></a> Encoder</h3>
+<p>由 Character Embedding、3个一维卷积和一个双向LSTM组成。</p>
+<ul>
+<li>Character Embedding：将 text-index 映射到 [1, 512]维；</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 161] ----&gt; [32, 512, 161], 32为batch_size的大小，161为当前batch_size下最长的句子的音素长度</span><br><span class="line">nn.Embedding(hparams.n_symbols, hparams.symbols_embedding_dim)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>一维卷积：主要是由于实践中RNN很难捕获长时依赖，这里使用卷积层获取上下文；</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 512, 161] -----&gt; [32, 512, 161]</span><br><span class="line">convolutions &#x3D; []</span><br><span class="line">for _ in range(hparams.encoder_n_convolutions):</span><br><span class="line">    conv_layer &#x3D; nn.Sequential(</span><br><span class="line">        ConvNorm(hparams.encoder_embedding_dim,</span><br><span class="line">                    hparams.encoder_embedding_dim,</span><br><span class="line">                    kernel_size&#x3D;hparams.encoder_kernel_size, stride&#x3D;1,</span><br><span class="line">                    padding&#x3D;int((hparams.encoder_kernel_size - 1) &#x2F; 2),</span><br><span class="line">                    dilation&#x3D;1, w_init_gain&#x3D;&#39;relu&#39;),</span><br><span class="line">        nn.BatchNorm1d(hparams.encoder_embedding_dim))</span><br><span class="line">    convolutions.append(conv_layer)</span><br><span class="line">self.convolutions &#x3D; nn.ModuleList(convolutions)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>转置（为LSTM准备，这是pytorch导致的）</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 512, 161] -----&gt; [32, 161, 512]</span><br><span class="line">x &#x3D; x.transpose(1, 2)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>双向LSTM（隐藏层是256，由于是双向LSTM，最总结果是256维concat256维，最终就是512维）：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 161， 512] -----&gt; [32, 161, 512]</span><br><span class="line">self.lstm &#x3D; nn.LSTM(hparams.encoder_embedding_dim,</span><br><span class="line">                    int(hparams.encoder_embedding_dim &#x2F; 2), 1,</span><br><span class="line">                    batch_first&#x3D;True, bidirectional&#x3D;True)</span><br></pre></td></tr></table></figure>
+<p>Encoder 将字符映射到了一个512维的隐状态。</p>
+<h3 id="location-sensitive-attention-和-decoder"><a class="markdownIt-Anchor" href="#location-sensitive-attention-和-decoder"></a> Location Sensitive Attention 和 Decoder</h3>
+<p>代码中将 Attention与Decoder放到了一起，这里就放到一起解释。<br>
+训练阶段用到Teacher Forcing。</p>
+<ul>
+<li>
+<p>Teacher Forcing：直接使用训练数据的标准答案(ground truth)的对应上一项作为下一个state的输入。</p>
+</li>
+<li>
+<p>超参数</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">self.n_mel_channels &#x3D; hparams.n_mel_channels                 # 80       mel 通道数</span><br><span class="line">self.n_frames_per_step &#x3D; hparams.n_frames_per_step           # 1        每次预测1帧</span><br><span class="line">self.encoder_embedding_dim &#x3D; hparams.encoder_embedding_dim   # 512      隐层维数</span><br><span class="line">self.attention_rnn_dim &#x3D; hparams.attention_rnn_dim           # 1024     attention维数</span><br><span class="line">self.decoder_rnn_dim &#x3D; hparams.decoder_rnn_dim               # 1024     decoder维数</span><br><span class="line">self.prenet_dim &#x3D; hparams.prenet_dim                         # 256      prenet维数</span><br><span class="line">self.max_decoder_steps &#x3D; hparams.max_decoder_steps           # 1000     预测最大1000步</span><br><span class="line">self.gate_threshold &#x3D; hparams.gate_threshold                 # 0.5      Stop Token的概率</span><br><span class="line">self.p_attention_dropout &#x3D; hparams.p_attention_dropout       # 0.1      dropout</span><br><span class="line">self.p_decoder_dropout &#x3D; hparams.p_decoder_dropout           # 0.1      dropout</span><br></pre></td></tr></table></figure>
+<ul>
+<li>一些变量解释：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">memory：encoder_output, encoder 的输出，维数为[32, 161, 512]</span><br><span class="line">decoder_input：初始输入[1, 32, 80]，全为0的向量</span><br><span class="line">decoder_inputs：真实mel谱[32, 80, 886]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>parse_decoder_inputs</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 80, 886]  -----&gt; [886, 32, 80]</span><br><span class="line">解析decoder_inputs</span><br></pre></td></tr></table></figure>
+<ul>
+<li>cat decoder_input and decoder_inputs</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[32, 80, 886]  -----&gt; [886, 32, 80]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Prenet：作为一个信息瓶颈层(boottleneck)，对于学习注意力是必须的</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">维数变化：[887， 32， 80]  -----&gt; [887, 32, 256]</span><br><span class="line">self.prenet &#x3D; Prenet(</span><br><span class="line">    hparams.n_mel_channels * hparams.n_frames_per_step,</span><br><span class="line">    [hparams.prenet_dim, hparams.prenet_dim])</span><br><span class="line"># Prenet：两个线性层</span><br><span class="line">in_sizes &#x3D; [in_dim] + sizes[:-1]</span><br><span class="line">self.layers &#x3D; nn.ModuleList(</span><br><span class="line">    [LinearNorm(in_size, out_size, bias&#x3D;False)</span><br><span class="line">        for (in_size, out_size) in zip(in_sizes, sizes)])</span><br></pre></td></tr></table></figure>
+<ul>
+<li>初始化中间变量</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"># B 为 batch_size                                       32</span><br><span class="line"># MAX_TIME 为 当前 batch 中句子最长的长度                 161</span><br><span class="line">self.attention_hidden &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, self.attention_rnn_dim).zero_())                 维数：[32, 1024]</span><br><span class="line"></span><br><span class="line">self.attention_cell &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, self.attention_rnn_dim).zero_())                 维数：[32, 1024]</span><br><span class="line"></span><br><span class="line">self.decoder_hidden &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, self.decoder_rnn_dim).zero_())                   维数：[32, 1024]</span><br><span class="line"></span><br><span class="line">self.decoder_cell &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, self.decoder_rnn_dim).zero_())                   维数：[32, 1024]</span><br><span class="line"></span><br><span class="line">self.attention_weights &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, MAX_TIME).zero_())                               维数：[32， 161]</span><br><span class="line"></span><br><span class="line">self.attention_weights_cum &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, MAX_TIME).zero_())                               维数：[32, 161]</span><br><span class="line"></span><br><span class="line">self.attention_context &#x3D; Variable(memory.data.new(</span><br><span class="line">    B, self.encoder_embedding_dim).zero_())             维数：[32, 512]</span><br><span class="line"></span><br><span class="line">self.memory &#x3D; memory                                    维数：[32, 161, 512]</span><br><span class="line"># memory 是 encoder 的 outputs， 维数是 512 维</span><br><span class="line">#  processed_memory 是这样处理的：将 512 维 映射到 128 维，同时激活函数是 tanh，结果是 [-1, 1]</span><br><span class="line"></span><br><span class="line">self.processed_memory &#x3D; self.attention_layer.memory_layer(memory)   维数：[32, 161, 128]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>decode (attention and decode)</li>
+</ul>
+<p>| 应该是最核心关键的部分了</p>
+<p>接下来利用 teacher forcing 生成 mel 谱，空的数组生成第一帧 mel，真实的第一帧mel生成第二帧mel，以此类推</p>
+<ol>
+<li>第一层 LSTM：<br>
+LSTM 的 前向传播  <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>h</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">h_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.69444em;"></span><span class="strut bottom" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">h</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord mathit">t</span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span>, <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>C</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">C_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.68333em;"></span><span class="strut bottom" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit" style="margin-right:0.07153em;">C</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:-0.07153em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord mathit">t</span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span> = Lstmcell(<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>x</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">x_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">x</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord mathit">t</span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span>, <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>h</mi><mo>(</mo></msub><mi>t</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">h_(t-1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1.1052em;vertical-align:-0.3551999999999999em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">h</span><span class="vlist"><span style="top:0.18019999999999992em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mopen">(</span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mord mathit">t</span><span class="mbin">−</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>C</mi><mo>(</mo></msub><mi>t</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow><annotation encoding="application/x-tex">C_(t-1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.75em;"></span><span class="strut bottom" style="height:1.1052em;vertical-align:-0.3551999999999999em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit" style="margin-right:0.07153em;">C</span><span class="vlist"><span style="top:0.18019999999999992em;margin-right:0.05em;margin-left:-0.07153em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mopen">(</span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span><span class="mord mathit">t</span><span class="mbin">−</span><span class="mord mathrm">1</span><span class="mclose">)</span></span></span></span>)</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 第一帧 mel:decode_input，维数[32, 256]</span><br><span class="line"></span><br><span class="line">cell_input &#x3D; torch.cat((decoder_input, self.attention_context), -1)  # 这个就相当于 x_t</span><br><span class="line"></span><br><span class="line">self.attention_hidden, self.attention_cell &#x3D; self. attention_rnn(</span><br><span class="line">    cell_input, (self.attention_hidden, self.attention_cell))</span><br></pre></td></tr></table></figure>
+<p>| 这里要介绍两个注意力机制：Dot-product (这个是self-attention论文里用到) 和 Additive(这个是Tacotron2用到的)。详细看图片<br>
+<img src="/2021/10/08/Tacotron2/attention.jpg" alt="attention"></p>
+<ol start="2">
+<li>内容注意力：</li>
+</ol>
+<p>利用 1. 中获得的 attention_hidden 计算 Q</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 维数变化：[32, 1024]  -----&gt; [32, 1, 128]</span><br><span class="line">self.query_layer &#x3D; LinearNorm(attention_rnn_dim, attention_dim,</span><br><span class="line">                                bias&#x3D;False, w_init_gain&#x3D;&#39;tanh&#39;)</span><br><span class="line"># 1024 --&gt; 128 , 同时利用 tanh 将结果映射到 [-1, 1]</span><br><span class="line"></span><br><span class="line">processed_query &#x3D; self.query_layer(query.unsqueeze(1))   # 这里query就是 self.attention_hidden</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>位置注意力：</li>
+</ol>
+<p>位置注意力就是基于 attention_weights 的，这里不包含内容信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># 输入</span><br><span class="line">attention_weights_cat &#x3D; torch.cat(</span><br><span class="line">    (self.attention_weights.unsqueeze(1),</span><br><span class="line">    self.attention_weights_cum.unsqueeze(1)), dim&#x3D;1)           维数：[32, 2, 161]</span><br><span class="line"></span><br><span class="line"># 网络</span><br><span class="line">padding &#x3D; int((attention_kernel_size - 1) &#x2F; 2)</span><br><span class="line">self.location_conv &#x3D; ConvNorm(2, attention_n_filters,</span><br><span class="line">                                kernel_size&#x3D;attention_kernel_size,</span><br><span class="line">                                padding&#x3D;padding, bias&#x3D;False, stride&#x3D;1,</span><br><span class="line">                                dilation&#x3D;1)                               一维卷积</span><br><span class="line">self.location_dense &#x3D; LinearNorm(attention_n_filters, attention_dim,</span><br><span class="line">                                    bias&#x3D;False, w_init_gain&#x3D;&#39;tanh&#39;)       线性层 </span><br><span class="line"></span><br><span class="line">维数变化 [32, 2, 161]  -----&gt;  [32, 161, 128]</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>计算 Attention</li>
+</ol>
+<p>将 processed_memory 与 2. 计算的 Q 与 3.计算的 L 相加，计算最终 Attention</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">energies &#x3D; self.v(torch.tanh(</span><br><span class="line">    processed_query + processed_attention_weights + processed_memory))</span><br><span class="line"># energies 与 alignment 是一个东东</span><br><span class="line">attention_weights &#x3D; F.softmax(alignment, dim&#x3D;1)   # 将权重映射到 【0， 1】</span><br><span class="line">维数变化： [32, 161, 128]  -----&gt;  [32, 161, 1]  -----&gt; [32, 161]</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>计算 attention_context</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">attention_context &#x3D; torch.bmm(attention_weights.unsqueeze(1), memory)</span><br><span class="line"># print(memory.shape)</span><br><span class="line">#  torch.bmm  矩阵乘法</span><br><span class="line">#    （32 * 1 * 161） %*% （32 * 161 * 512）</span><br><span class="line">attention_context &#x3D; attention_context.squeeze(1)</span><br><span class="line"># 32 * 512</span><br></pre></td></tr></table></figure>
+<ol start="6">
+<li>第二层LSTM</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># 预测 mel 谱，及Stop Token</span><br><span class="line">decoder_input &#x3D; torch.cat(</span><br><span class="line">    (self.attention_hidden, self.attention_context), -1)            # 上一层LSTM返回的hidden与 5. 计算的attention_context</span><br><span class="line"></span><br><span class="line">self.decoder_hidden, self.decoder_cell &#x3D; self.decoder_rnn(</span><br><span class="line">    decoder_input, (self.decoder_hidden, self.decoder_cell))        # </span><br><span class="line"></span><br><span class="line">self.decoder_hidden &#x3D; F.dropout(</span><br><span class="line">    self.decoder_hidden, self.p_decoder_dropout, self.training)</span><br><span class="line"></span><br><span class="line">decoder_hidden_attention_context &#x3D; torch.cat(</span><br><span class="line">    (self.decoder_hidden, self.attention_context), dim&#x3D;1)</span><br><span class="line"></span><br><span class="line">decoder_output &#x3D; self.linear_projection(</span><br><span class="line">    decoder_hidden_attention_context)                               # 32 * 80</span><br><span class="line"></span><br><span class="line">gate_prediction &#x3D; self.gate_layer(decoder_hidden_attention_context) # 32 * 1 </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>接下来while循环所有帧！</p>
+<h3 id="post-net"><a class="markdownIt-Anchor" href="#post-net"></a> Post-Net</h3>
+<p>Five 1-d convolution with 512 channels and kernel size 5. 精调 decoder 获得的Mel谱！</p>
+<h3 id="inference"><a class="markdownIt-Anchor" href="#inference"></a> Inference</h3>
+<ul>
+<li>利用上一帧预测的mel作为输入，而不是真实的mel；</li>
+<li>Dropout 在推断阶段也是 true！</li>
+</ul>
+<h3 id="绘制对齐图与mel谱图"><a class="markdownIt-Anchor" href="#绘制对齐图与mel谱图"></a> 绘制对齐图与MEL谱图</h3>
+<p>Tacotron2绘制的 mel 图是真的漂亮，这里扒一下代码，为后续准备。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">path &#x3D; &quot;BZNSYP-mel-000001.npy&quot;</span><br><span class="line">a &#x3D; np.load(path)</span><br><span class="line">fig, ax &#x3D; plt.subplots(figsize&#x3D;(6, 3))</span><br><span class="line">ax.imshow(a.T, aspect&#x3D;&quot;auto&quot;, origin&#x3D;&quot;lower&quot;,</span><br><span class="line">               interpolation&#x3D;&#39;none&#39;)</span><br><span class="line">这里保存的 .npy 文件是 Tacotron2 中STFT获得的 mel 谱</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/09/09/Clash/" rel="prev" title="Clash">
+      <i class="fa fa-chevron-left"></i> Clash
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/02/SpeakerRecognition/" rel="next" title="Speaker Recognition：An Overview">
+      Speaker Recognition：An Overview <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%BA%E6%96%87%E5%8F%8A%E4%BB%A3%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text"> 论文及代码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BA%E6%96%87"><span class="nav-number">2.1.</span> <span class="nav-text"> 论文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">2.2.</span> <span class="nav-text"> 代码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D"><span class="nav-number">3.</span> <span class="nav-text"> 详细介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.1.</span> <span class="nav-text"> 模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#encoder"><span class="nav-number">3.1.1.</span> <span class="nav-text"> Encoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#location-sensitive-attention-%E5%92%8C-decoder"><span class="nav-number">3.1.2.</span> <span class="nav-text"> Location Sensitive Attention 和 Decoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#post-net"><span class="nav-number">3.1.3.</span> <span class="nav-text"> Post-Net</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#inference"><span class="nav-number">3.1.4.</span> <span class="nav-text"> Inference</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%98%E5%88%B6%E5%AF%B9%E9%BD%90%E5%9B%BE%E4%B8%8Emel%E8%B0%B1%E5%9B%BE"><span class="nav-number">3.1.5.</span> <span class="nav-text"> 绘制对齐图与MEL谱图</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

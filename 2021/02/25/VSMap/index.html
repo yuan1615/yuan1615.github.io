@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文介绍利用R语言中Shiny构建可视化面板，该可视化面板包含了以下三个部分：基于Leaflet的地图可视化、基于plotly的交互图形以及基于DT的交互式表格。效果见https:&#x2F;&#x2F;yuan1615.shinyapps.io&#x2F;VSmap&#x2F;。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Visualization Panel with Shiny">
+<meta property="og:url" content="https://yuan1615.github.io/2021/02/25/VSMap/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="本文介绍利用R语言中Shiny构建可视化面板，该可视化面板包含了以下三个部分：基于Leaflet的地图可视化、基于plotly的交互图形以及基于DT的交互式表格。效果见https:&#x2F;&#x2F;yuan1615.shinyapps.io&#x2F;VSmap&#x2F;。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2021/02/25/VSMap/map.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2021/02/25/VSMap/plotly.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2021/02/25/VSMap/DT.jpg">
+<meta property="article:published_time" content="2021-02-25T09:45:58.000Z">
+<meta property="article:modified_time" content="2021-02-25T13:14:27.000Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="Visualization">
+<meta property="article:tag" content="R">
+<meta property="article:tag" content="Shiny">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2021/02/25/VSMap/map.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2021/02/25/VSMap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>A Visualization Panel with Shiny | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/02/25/VSMap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          A Visualization Panel with Shiny
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-25 17:45:58 / Modified: 21:14:27" itemprop="dateCreated datePublished" datetime="2021-02-25T17:45:58+08:00">2021-02-25</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文介绍利用R语言中<a target="_blank" rel="noopener" href="https://shiny.rstudio.com/">Shiny</a>构建可视化面板，该可视化面板包含了以下三个部分：基于<a target="_blank" rel="noopener" href="https://leafletjs.com/">Leaflet</a>的地图可视化、基于<a target="_blank" rel="noopener" href="https://plotly.com/r/">plotly</a>的交互图形以及基于<a target="_blank" rel="noopener" href="https://CRAN.R-project.org/package=DT">DT</a>的交互式表格。效果见<a target="_blank" rel="noopener" href="https://yuan1615.shinyapps.io/VSmap/">https://yuan1615.shinyapps.io/VSmap/</a>。</p>
+<span id="more"></span>
+<ul>
+<li>地图可视化</li>
+</ul>
+<p>通过<code>指标数量筛选按钮</code>及<code>城市筛选按钮</code>进行数据筛选，在地图上绘制气泡图，并建立<code>鼠标悬停显示</code>。<br>
+<img src="/2021/02/25/VSMap/map.jpg" alt="map"></p>
+<p>这里还可以将气泡图更换为热力图，详细操作可参见<a target="_blank" rel="noopener" href="https://leafletjs.com/">Leaflet</a>。</p>
+<ul>
+<li>交互图形</li>
+</ul>
+<p>利用<a target="_blank" rel="noopener" href="https://plotly.com/r/">plotly</a>构建交互式图形<br>
+<img src="/2021/02/25/VSMap/plotly.jpg" alt="plotly"></p>
+<ul>
+<li>交互式表格</li>
+</ul>
+<p>利用<a target="_blank" rel="noopener" href="https://CRAN.R-project.org/package=DT">DT</a>构建交互式表格，可实现表格筛选、下载及搜索等功能<br>
+<img src="/2021/02/25/VSMap/DT.jpg" alt="DT"></p>
+<p>详细代码附上：</p>
+<figure class="highlight r"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">library(shiny)</span><br><span class="line">library(tidyverse)</span><br><span class="line">library(DT)</span><br><span class="line">library(leaflet)</span><br><span class="line">library(sp)</span><br><span class="line">library(htmltools)</span><br><span class="line">library(plotly)</span><br><span class="line"></span><br><span class="line">load(file = <span class="string">&quot;negative_comment.Rdata&quot;</span>)</span><br><span class="line"></span><br><span class="line">area_neg_comment &lt;- negative_comment %&gt;% group_by(city_name, grid_area_id) %&gt;% </span><br><span class="line">    summarise(n_neg_comment=n()) %&gt;% filter(grid_area_id != <span class="string">&quot;(NULL)&quot;</span>)</span><br><span class="line"></span><br><span class="line">load(file = <span class="string">&quot;short_time.Rdata&quot;</span>)</span><br><span class="line"></span><br><span class="line">area_short_time &lt;- short_time %&gt;% group_by(city_name, grid_area_id) %&gt;% </span><br><span class="line">    summarise(n_short_time=n()) %&gt;% filter(grid_area_id != <span class="string">&quot;(NULL)&quot;</span>)</span><br><span class="line">area_short_time$grid_area_id &lt;- <span class="built_in">as.character</span>(area_short_time$grid_area_id)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">load(file = <span class="string">&quot;fail_lock.Rdata&quot;</span>)</span><br><span class="line"></span><br><span class="line">area_fail_lock &lt;- fail_lock%&gt;% group_by(city_name, grid_area_id) %&gt;% </span><br><span class="line">    summarise(n_fail_lock=n()) %&gt;%  filter(grid_area_id != <span class="string">&quot;(NULL)&quot;</span>)</span><br><span class="line">area_fail_lock$grid_area_id &lt;- <span class="built_in">as.character</span>(area_fail_lock$grid_area_id)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">lng_lat &lt;- distinct(negative_comment[, <span class="built_in">c</span>(<span class="string">&quot;grid_area_id&quot;</span>, <span class="string">&quot;grid_area_name&quot;</span>,</span><br><span class="line">                                         <span class="string">&quot;control_person_name&quot;</span>,</span><br><span class="line">                                         <span class="string">&quot;min_lng&quot;</span>,<span class="string">&quot;max_lng&quot;</span>,</span><br><span class="line">                                         <span class="string">&quot;min_lat&quot;</span>,<span class="string">&quot;max_lat&quot;</span>)])</span><br><span class="line">lng_lat &lt;- lng_lat[-which(lng_lat$min_lat==<span class="string">&quot;(NULL)&quot;</span>),]</span><br><span class="line">lng_lat$min_lng &lt;- <span class="built_in">as.numeric</span>(lng_lat$min_lng)</span><br><span class="line">lng_lat$max_lng &lt;- <span class="built_in">as.numeric</span>(lng_lat$max_lng)</span><br><span class="line">lng_lat$min_lat &lt;- <span class="built_in">as.numeric</span>(lng_lat$min_lat)</span><br><span class="line">lng_lat$max_lat &lt;- <span class="built_in">as.numeric</span>(lng_lat$max_lat)</span><br><span class="line"></span><br><span class="line">lng_lat &lt;- lng_lat %&gt;% </span><br><span class="line">    mutate(lat = (max_lng+min_lng)/<span class="number">2</span>,</span><br><span class="line">           lng = (min_lat+max_lat)/<span class="number">2</span>) %&gt;% </span><br><span class="line">    select(grid_area_id,grid_area_name,control_person_name,lat, lng)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">map_data &lt;- inner_join(lng_lat, area_neg_comment)</span><br><span class="line">map_data &lt;- inner_join(map_data, area_short_time)</span><br><span class="line">map_data &lt;- inner_join(map_data, area_fail_lock)</span><br><span class="line"></span><br><span class="line">load(file = <span class="string">&quot;manager.Rdata&quot;</span>)</span><br><span class="line"></span><br><span class="line">manager &lt;- manager[, <span class="built_in">c</span>(<span class="string">&quot;area_name&quot;</span>,<span class="string">&quot;grid_number&quot;</span>)]</span><br><span class="line">colnames(manager) &lt;- <span class="built_in">c</span>(<span class="string">&quot;area_name&quot;</span>,<span class="string">&quot;grid_area_id&quot;</span>)</span><br><span class="line"></span><br><span class="line">map_data &lt;- left_join(map_data, manager)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 脱敏处理</span></span><br><span class="line">n = nrow(map_data)</span><br><span class="line">map_data$grid_area_id &lt;- <span class="built_in">as.character</span>(sample(<span class="number">1</span>:n, n))</span><br><span class="line">map_data$grid_area_name &lt;- substring(map_data$grid_area_name, <span class="number">6</span>, <span class="number">20</span>)</span><br><span class="line">map_data$control_person_name &lt;- paste(substring(map_data$control_person_name, <span class="number">1</span>, <span class="number">1</span>),</span><br><span class="line">                                      <span class="string">&quot;**&quot;</span>,</span><br><span class="line">                                      sep = <span class="string">&quot;&quot;</span>)</span><br><span class="line"><span class="comment"># map_data$n_neg_comment &lt;- sample(map_data$n_neg_comment, n)</span></span><br><span class="line"><span class="comment"># map_data$n_short_time &lt;- sample(map_data$n_short_time, n)</span></span><br><span class="line"><span class="comment"># map_data$n_fail_lock &lt;- sample(map_data$n_fail_lock, n)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#----  城市中心经纬度 ----</span></span><br><span class="line">city_lng_lat &lt;- data.frame(city_name = <span class="built_in">c</span>(<span class="string">&quot;Shang Hai&quot;</span>, <span class="string">&quot;Hang Zhou&quot;</span>, <span class="string">&quot;Nan Jing&quot;</span>, </span><br><span class="line">                               <span class="string">&quot;Zheng Zhou&quot;</span>,<span class="string">&quot;Luo Yang&quot;</span>,<span class="string">&quot;He Fei&quot;</span>),</span><br><span class="line">                 lng = <span class="built_in">c</span>(<span class="number">121.482265</span>,<span class="number">120.204587</span>,<span class="number">118.802997</span>,<span class="number">113.665336</span>,<span class="number">112.4508</span>,<span class="number">117.229991</span>),</span><br><span class="line">                 lat = <span class="built_in">c</span>(<span class="number">31.245198</span>,<span class="number">30.253332</span>,<span class="number">32.065876</span>,<span class="number">34.751305</span>,<span class="number">34.626878</span>,<span class="number">31.828787</span>))</span><br><span class="line"></span><br><span class="line"><span class="comment">##### 绘制综合地图 #####</span></span><br><span class="line"></span><br><span class="line">addLabel &lt;- <span class="keyword">function</span>(data) &#123;</span><br><span class="line">    data$label &lt;- paste0(</span><br><span class="line">        <span class="string">&#x27;&lt;b&gt;&#x27;</span>, ifelse(<span class="built_in">is.na</span>(data$`grid_area_id`), data$`grid_area_name`, data$`grid_area_name`), <span class="string">&#x27;&lt;/b&gt;&lt;br&gt;</span></span><br><span class="line"><span class="string">    &lt;table style=&quot;width:120px;&quot;&gt;</span></span><br><span class="line"><span class="string">    &lt;tr&gt;&lt;td&gt;grid_ID:&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;&#x27;</span>, data$grid_area_id, <span class="string">&#x27;&lt;/td&gt;&lt;/tr&gt;</span></span><br><span class="line"><span class="string">    &lt;tr&gt;&lt;td&gt;manager:&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;&#x27;</span>, data$control_person_name, <span class="string">&#x27;&lt;/td&gt;&lt;/tr&gt;</span></span><br><span class="line"><span class="string">    &lt;tr&gt;&lt;td&gt;neg_comment:&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;&#x27;</span>, data$n_neg_comment, <span class="string">&#x27;&lt;/td&gt;&lt;/tr&gt;</span></span><br><span class="line"><span class="string">    &lt;tr&gt;&lt;td&gt;short_time:&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;&#x27;</span>, data$n_short_time, <span class="string">&#x27;&lt;/td&gt;&lt;/tr&gt;</span></span><br><span class="line"><span class="string">    &lt;tr&gt;&lt;td&gt;fail_lock:&lt;/td&gt;&lt;td align=&quot;right&quot;&gt;&#x27;</span>, data$n_fail_lock, <span class="string">&#x27;&lt;/td&gt;&lt;/tr&gt;</span></span><br><span class="line"><span class="string">    &lt;/table&gt;&#x27;</span></span><br><span class="line">    )</span><br><span class="line">    data$label &lt;- lapply(data$label, HTML)</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">return</span>(data)</span><br><span class="line">&#125;</span><br><span class="line">zoomLevel &lt;- 50 </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ui &lt;- fluidPage(</span><br><span class="line">    <span class="comment"># shinythemes::themeSelector(),  # &lt;--- Add this somewhere in the UI</span></span><br><span class="line">    <span class="comment"># img(src = &quot;ceshi.jpg&quot;, width = 1500, height = 100),</span></span><br><span class="line">    headerPanel(<span class="string">&quot;VS MAP&quot;</span>),</span><br><span class="line">    includeCSS(<span class="string">&quot;./www/main.css&quot;</span>),</span><br><span class="line">    sidebarLayout(</span><br><span class="line">        sidebarPanel(</span><br><span class="line">            sliderInput(<span class="string">&quot;orderINput&quot;</span>, <span class="string">&quot;Order Number&quot;</span>, <span class="number">0</span>, <span class="number">100</span>, <span class="built_in">c</span>(<span class="number">0</span>, <span class="number">50</span>), pre = <span class="string">&quot;&quot;</span>),</span><br><span class="line">            selectInput(<span class="string">&quot;typeInput&quot;</span>, <span class="string">&quot;City Name&quot;</span>,</span><br><span class="line">                        choices = <span class="built_in">c</span>(<span class="string">&quot;Shang Hai&quot;</span>, <span class="string">&quot;Hang Zhou&quot;</span>, <span class="string">&quot;Nan Jing&quot;</span>, </span><br><span class="line">                                    <span class="string">&quot;Zheng Zhou&quot;</span>,<span class="string">&quot;Luo Yang&quot;</span>,<span class="string">&quot;He Fei&quot;</span>),</span><br><span class="line">                        multiple = <span class="built_in">F</span>,</span><br><span class="line">                        selected = <span class="built_in">c</span>(<span class="string">&quot;Shang Hai&quot;</span>))</span><br><span class="line">        ),</span><br><span class="line">        mainPanel(</span><br><span class="line">            tabsetPanel(</span><br><span class="line">                tabPanel(<span class="string">&quot;Map&quot;</span>, leafletOutput(<span class="string">&quot;map&quot;</span>)),</span><br><span class="line">                tabPanel(<span class="string">&quot;Summary Plot&quot;</span>,</span><br><span class="line">                         plotlyOutput(<span class="string">&quot;SP&quot;</span>)),</span><br><span class="line">                tabPanel(<span class="string">&quot;Tabel Group By Area&quot;</span>,</span><br><span class="line">                         downloadButton(<span class="string">&quot;downloadData_daqu&quot;</span>, <span class="string">&quot;Download the Data&quot;</span>),</span><br><span class="line">                         DT::dataTableOutput(<span class="string">&quot;results_daqu&quot;</span>)),</span><br><span class="line">                tabPanel(<span class="string">&quot;Details Tabel&quot;</span>,</span><br><span class="line">                         downloadButton(<span class="string">&quot;downloadData&quot;</span>, <span class="string">&quot;Download the Data&quot;</span>),</span><br><span class="line">                         DT::dataTableOutput(<span class="string">&quot;results&quot;</span>))</span><br><span class="line">            )</span><br><span class="line">            </span><br><span class="line">        )</span><br><span class="line">    )</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">server &lt;- <span class="keyword">function</span>(input, output) &#123;</span><br><span class="line">  </span><br><span class="line">    filtered &lt;- reactive(&#123;</span><br><span class="line">        map_data %&gt;%</span><br><span class="line">            filter(n_neg_comment &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">                   n_short_time &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">                   n_fail_lock &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">                   city_name %in% input$typeInput</span><br><span class="line">            )</span><br><span class="line">        </span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    filtered_daqu &lt;- reactive(&#123;</span><br><span class="line">      daqu &lt;- map_data %&gt;%</span><br><span class="line">        filter(n_neg_comment &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">               n_short_time &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">               n_fail_lock &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">               city_name %in% input$typeInput</span><br><span class="line">        ) %&gt;% group_by(city_name, area_name) %&gt;% </span><br><span class="line">        summarise(n_neg_comment=<span class="built_in">sum</span>(n_neg_comment),</span><br><span class="line">                  n_short_time=<span class="built_in">sum</span>(n_short_time),</span><br><span class="line">                  n_fail_lock=<span class="built_in">sum</span>(n_fail_lock))</span><br><span class="line">      colnames(daqu) &lt;- <span class="built_in">c</span>(<span class="string">&quot;city&quot;</span>,<span class="string">&quot;area&quot;</span>,<span class="string">&quot;n_neg_comment&quot;</span>,</span><br><span class="line">                          <span class="string">&quot;n_short_time&quot;</span>,<span class="string">&quot;n_fail_lock&quot;</span>)</span><br><span class="line">      daqu</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    filtered_neg &lt;- reactive(&#123;</span><br><span class="line">        negative_comment %&gt;%</span><br><span class="line">            filter(</span><br><span class="line">                   city_name %in% input$typeInput</span><br><span class="line">            )</span><br><span class="line">        </span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    filtered_short &lt;- reactive(&#123;</span><br><span class="line">        short_time %&gt;%</span><br><span class="line">            filter(</span><br><span class="line">                city_name %in% input$typeInput</span><br><span class="line">            )</span><br><span class="line">        </span><br><span class="line">    &#125;)</span><br><span class="line">    filtered_fail &lt;- reactive(&#123;</span><br><span class="line">        fail_lock %&gt;%</span><br><span class="line">            filter(</span><br><span class="line">                city_name %in% input$typeInput</span><br><span class="line">            )</span><br><span class="line">        </span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$results &lt;- DT::renderDataTable(&#123;</span><br><span class="line">        a &lt;- filtered()[,<span class="built_in">c</span>(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>)]</span><br><span class="line">        colnames(a) &lt;- <span class="built_in">c</span>(<span class="string">&quot;grid_id&quot;</span>,<span class="string">&quot;grid_name&quot;</span>,<span class="string">&quot;manager&quot;</span>,<span class="string">&quot;city_name&quot;</span>,</span><br><span class="line">                         <span class="string">&quot;n_neg_comment&quot;</span>,</span><br><span class="line">                         <span class="string">&quot;n_short_time&quot;</span>,<span class="string">&quot;n_fail_lock&quot;</span>)</span><br><span class="line">        a</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    output$downloadData &lt;- downloadHandler(</span><br><span class="line">        </span><br><span class="line">        filename = <span class="keyword">function</span>() &#123;</span><br><span class="line">            paste(<span class="string">&quot;data-&quot;</span>, Sys.Date(), <span class="string">&quot;.csv&quot;</span>, sep=<span class="string">&quot;&quot;</span>)</span><br><span class="line">        &#125;,</span><br><span class="line">        content = <span class="keyword">function</span>(file) &#123;</span><br><span class="line">            write_csv(filtered(), file)</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">    output$results_daqu &lt;- DT::renderDataTable(&#123;</span><br><span class="line">      filtered_daqu()</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$downloadData_daqu &lt;- downloadHandler(</span><br><span class="line">      </span><br><span class="line">      filename = <span class="keyword">function</span>() &#123;</span><br><span class="line">        paste(<span class="string">&quot;data-&quot;</span>, Sys.Date(), <span class="string">&quot;.csv&quot;</span>, sep=<span class="string">&quot;&quot;</span>)</span><br><span class="line">      &#125;,</span><br><span class="line">      content = <span class="keyword">function</span>(file) &#123;</span><br><span class="line">        write.csv(filtered_daqu(), file)</span><br><span class="line">      &#125;</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">    output$results_bike1 &lt;- DT::renderDataTable(&#123;</span><br><span class="line">        filtered_neg()[, <span class="built_in">c</span>(<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">10</span>,<span class="number">11</span>,<span class="number">14</span>)]</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$downloadData_bike1 &lt;- downloadHandler(</span><br><span class="line">        </span><br><span class="line">        filename = <span class="keyword">function</span>() &#123;</span><br><span class="line">            paste(<span class="string">&quot;data-&quot;</span>, Sys.Date(), <span class="string">&quot;.csv&quot;</span>, sep=<span class="string">&quot;&quot;</span>)</span><br><span class="line">        &#125;,</span><br><span class="line">        content = <span class="keyword">function</span>(file) &#123;</span><br><span class="line">            write.csv(filtered_neg()[, <span class="built_in">c</span>(<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">10</span>,<span class="number">11</span>,<span class="number">14</span>)], file)</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">    output$results_bike2 &lt;- DT::renderDataTable(&#123;</span><br><span class="line">        filtered_short()[, <span class="built_in">c</span>(<span class="number">3</span>,<span class="number">4</span>,<span class="number">7</span>,<span class="number">8</span>,<span class="number">13</span>)]</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$downloadData_bike2 &lt;- downloadHandler(</span><br><span class="line">        </span><br><span class="line">        filename = <span class="keyword">function</span>() &#123;</span><br><span class="line">            paste(<span class="string">&quot;data-&quot;</span>, Sys.Date(), <span class="string">&quot;.csv&quot;</span>, sep=<span class="string">&quot;&quot;</span>)</span><br><span class="line">        &#125;,</span><br><span class="line">        content = <span class="keyword">function</span>(file) &#123;</span><br><span class="line">            write.csv(filtered_short()[, <span class="built_in">c</span>(<span class="number">3</span>,<span class="number">4</span>,<span class="number">7</span>,<span class="number">8</span>,<span class="number">13</span>)], file)</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">    output$results_bike3 &lt;- DT::renderDataTable(&#123;</span><br><span class="line">        filtered_fail()[, <span class="built_in">c</span>(<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">8</span>,<span class="number">9</span>,<span class="number">13</span>)]</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$downloadData_bike3 &lt;- downloadHandler(</span><br><span class="line">        </span><br><span class="line">        filename = <span class="keyword">function</span>() &#123;</span><br><span class="line">            paste(<span class="string">&quot;data-&quot;</span>, Sys.Date(), <span class="string">&quot;.csv&quot;</span>, sep=<span class="string">&quot;&quot;</span>)</span><br><span class="line">        &#125;,</span><br><span class="line">        content = <span class="keyword">function</span>(file) &#123;</span><br><span class="line">            write.csv(filtered_fail()[, <span class="built_in">c</span>(<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">8</span>,<span class="number">9</span>,<span class="number">13</span>)], file)</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    output$map &lt;- renderLeaflet(&#123;</span><br><span class="line">        a &lt;- city_lng_lat %&gt;% filter(city_name %in% input$typeInput)</span><br><span class="line">        </span><br><span class="line">      map &lt;- leaflet(addLabel(filtered())) %&gt;%</span><br><span class="line">            setMaxBounds(-<span class="number">180</span>, -<span class="number">90</span>, <span class="number">180</span>, <span class="number">90</span>) %&gt;%</span><br><span class="line">            setView(a[<span class="number">1</span>,<span class="number">2</span>],a[<span class="number">1</span>,<span class="number">3</span>], zoom = <span class="number">10</span>) %&gt;%</span><br><span class="line">            addTiles() %&gt;%</span><br><span class="line">            addProviderTiles(providers$CartoDB.Positron, group = <span class="string">&quot;Light&quot;</span>) %&gt;%</span><br><span class="line">            addProviderTiles(providers$HERE.satelliteDay, group = <span class="string">&quot;Satellite&quot;</span>) %&gt;%</span><br><span class="line">            addLayersControl(</span><br><span class="line">                baseGroups    = <span class="built_in">c</span>(<span class="string">&quot;Light&quot;</span>,<span class="string">&quot;Satellite&quot;</span>),</span><br><span class="line">                overlayGroups = <span class="built_in">c</span>(<span class="string">&quot;neg_comment&quot;</span>, <span class="string">&quot;short_time&quot;</span>, <span class="string">&quot;fail_lock&quot;</span>)</span><br><span class="line">            ) %&gt;%</span><br><span class="line">            hideGroup(<span class="string">&quot;short_time&quot;</span>) %&gt;%</span><br><span class="line">            hideGroup(<span class="string">&quot;fail_lock&quot;</span>) %&gt;%</span><br><span class="line">            addEasyButton(easyButton(</span><br><span class="line">                icon    = <span class="string">&quot;glyphicon glyphicon-globe&quot;</span>, title = <span class="string">&quot;Reset zoom&quot;</span>,</span><br><span class="line">                onClick = JS(paste(<span class="string">&quot;function(btn, map)&#123; map.setView([&quot;</span>,a[<span class="number">1</span>,<span class="number">3</span>],<span class="string">&quot;,&quot;</span>,a[<span class="number">1</span>,<span class="number">2</span>],</span><br><span class="line">                                   <span class="string">&quot;], 10); &#125;&quot;</span>, sep = <span class="string">&quot;&quot;</span>)))) %&gt;%</span><br><span class="line">            addEasyButton(easyButton(</span><br><span class="line">                icon    = <span class="string">&quot;glyphicon glyphicon-map-marker&quot;</span>, title = <span class="string">&quot;Locate Me&quot;</span>,</span><br><span class="line">                onClick = JS(<span class="string">&quot;function(btn, map)&#123; map.locate(&#123;setView: true, maxZoom: 6&#125;); &#125;&quot;</span>)))%&gt;%</span><br><span class="line">            clearMarkers() %&gt;%</span><br><span class="line">            addCircleMarkers(</span><br><span class="line">                lng          = ~lng,</span><br><span class="line">                lat          = ~lat,</span><br><span class="line">                radius       = ~(n_neg_comment-<span class="built_in">min</span>(n_neg_comment))/(<span class="built_in">max</span>(n_neg_comment)-<span class="built_in">min</span>(n_neg_comment))*zoomLevel,</span><br><span class="line">                stroke       = <span class="literal">FALSE</span>,</span><br><span class="line">                fillOpacity  = <span class="number">0.5</span>,</span><br><span class="line">                label        = ~label,</span><br><span class="line">                labelOptions = labelOptions(textsize = <span class="number">15</span>),</span><br><span class="line">                group        = <span class="string">&quot;neg_comment&quot;</span></span><br><span class="line">            ) %&gt;%</span><br><span class="line">            addCircleMarkers(</span><br><span class="line">                lng          = ~lng,</span><br><span class="line">                lat          = ~lat,</span><br><span class="line">                radius       = ~(n_short_time-<span class="built_in">min</span>(n_short_time))/(<span class="built_in">max</span>(n_short_time)-<span class="built_in">min</span>(n_short_time))*zoomLevel,</span><br><span class="line">                stroke       = <span class="literal">FALSE</span>,</span><br><span class="line">                color        = <span class="string">&quot;#00b3ff&quot;</span>,</span><br><span class="line">                fillOpacity  = <span class="number">0.5</span>,</span><br><span class="line">                label        = ~label,</span><br><span class="line">                labelOptions = labelOptions(textsize = <span class="number">15</span>),</span><br><span class="line">                group        = <span class="string">&quot;short_time&quot;</span></span><br><span class="line">            ) %&gt;%</span><br><span class="line">            addCircleMarkers(</span><br><span class="line">                lng          = ~lng,</span><br><span class="line">                lat          = ~lat,</span><br><span class="line">                radius       = ~(n_fail_lock-<span class="built_in">min</span>(n_fail_lock))/(<span class="built_in">max</span>(n_fail_lock)-<span class="built_in">min</span>(n_fail_lock))*zoomLevel,</span><br><span class="line">                stroke       = <span class="literal">FALSE</span>,</span><br><span class="line">                color        = <span class="string">&quot;#005900&quot;</span>,</span><br><span class="line">                fillOpacity  = <span class="number">0.5</span>,</span><br><span class="line">                label        = ~label,</span><br><span class="line">                labelOptions = labelOptions(textsize = <span class="number">15</span>),</span><br><span class="line">                group = <span class="string">&quot;fail_lock&quot;</span></span><br><span class="line">            )</span><br><span class="line">        map</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    filtered_all &lt;- reactive(&#123;</span><br><span class="line">      temp &lt;- map_data %&gt;%</span><br><span class="line">        filter(n_neg_comment &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">               n_short_time &gt;= input$orderINput[<span class="number">1</span>],</span><br><span class="line">               n_fail_lock &gt;= input$orderINput[<span class="number">1</span>]</span><br><span class="line">        ) %&gt;% group_by(city_name) %&gt;% </span><br><span class="line">        summarise(n_neg_comment=<span class="built_in">sum</span>(n_neg_comment),</span><br><span class="line">                  n_short_time=<span class="built_in">sum</span>(n_short_time),</span><br><span class="line">                  n_fail_lock=<span class="built_in">sum</span>(n_fail_lock))</span><br><span class="line">      </span><br><span class="line">      colnames(temp) &lt;- <span class="built_in">c</span>(<span class="string">&quot;city&quot;</span>,<span class="string">&quot;n_neg_comment&quot;</span>,</span><br><span class="line">                          <span class="string">&quot;n_short_time&quot;</span>,<span class="string">&quot;n_fail_lock&quot;</span>)</span><br><span class="line">      temp$city &lt;- factor(temp$city, levels = temp$city[order(-temp$n_short_time)])</span><br><span class="line">      </span><br><span class="line">      temp</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">    output$SP &lt;- renderPlotly(&#123;</span><br><span class="line">      </span><br><span class="line">      fig &lt;- plot_ly(filtered_all(), x = ~city, y = ~n_neg_comment, type = <span class="string">&#x27;bar&#x27;</span>, name = <span class="string">&#x27;neg comment&#x27;</span>)</span><br><span class="line">      fig &lt;- fig %&gt;% add_trace(y = ~n_short_time, name = <span class="string">&#x27;short time&#x27;</span>)</span><br><span class="line">      fig &lt;- fig %&gt;% add_trace(y = ~n_fail_lock, name = <span class="string">&#x27;fail lock&#x27;</span>)</span><br><span class="line">      fig &lt;- fig %&gt;% layout(yaxis = <span class="built_in">list</span>(title = <span class="string">&#x27;Count&#x27;</span>), barmode = <span class="string">&#x27;group&#x27;</span>)</span><br><span class="line">      </span><br><span class="line">      fig</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">shinyApp(ui = ui, server = server)</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Visualization/" rel="tag"># Visualization</a>
+              <a href="/tags/R/" rel="tag"># R</a>
+              <a href="/tags/Shiny/" rel="tag"># Shiny</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/24/MachineLearning2019/" rel="prev" title="Machine Learning 2019">
+      <i class="fa fa-chevron-left"></i> Machine Learning 2019
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/04/06/ADASPEECH/" rel="next" title="ADASPEECH：Adaptive Text to Speeech for Custom Voice">
+      ADASPEECH：Adaptive Text to Speeech for Custom Voice <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MQTTS: A Vector Quantized Approach for Text to Speech Synthesis on Real-World Spontaneous Speech 通过将传统以 Mel谱 为中间件建模的方式，改变为以 多个矢量组 为中间件建模的方式，解决真实世界中自发的口语化语音难以建模的问题。利用该方法可以使用大数据量（如 WeNetSpeech）训练TTS模型，合">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MQTTS">
+<meta property="og:url" content="https://yuan1615.github.io/2023/04/11/MQTTS/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="MQTTS: A Vector Quantized Approach for Text to Speech Synthesis on Real-World Spontaneous Speech 通过将传统以 Mel谱 为中间件建模的方式，改变为以 多个矢量组 为中间件建模的方式，解决真实世界中自发的口语化语音难以建模的问题。利用该方法可以使用大数据量（如 WeNetSpeech）训练TTS模型，合">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2023/04/11/MQTTS/MQTTS.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2023/04/11/MQTTS/MQTTS-Transformer.jpg">
+<meta property="article:published_time" content="2023-04-11T10:58:33.000Z">
+<meta property="article:modified_time" content="2023-05-26T18:19:48.678Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2023/04/11/MQTTS/MQTTS.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2023/04/11/MQTTS/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MQTTS | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2023/04/11/MQTTS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MQTTS
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-04-11 18:58:33" itemprop="dateCreated datePublished" datetime="2023-04-11T18:58:33+08:00">2023-04-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-05-27 02:19:48" itemprop="dateModified" datetime="2023-05-27T02:19:48+08:00">2023-05-27</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>MQTTS</strong>: A Vector Quantized Approach for Text to Speech Synthesis on Real-World Spontaneous Speech<br>
+通过将传统以 <code>Mel谱</code> 为中间件建模的方式，改变为以 <code>多个矢量组</code> 为中间件建模的方式，解决真实世界中自发的口语化语音难以建模的问题。利用该方法可以使用大数据量（如 WeNetSpeech）训练TTS模型，合成语音更加真实自然。</p>
+<span id="more"></span>
+<h2 id="paper"><a class="markdownIt-Anchor" href="#paper"></a> Paper</h2>
+<p>论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2302.04215">https://arxiv.org/abs/2302.04215</a></p>
+<p>论文附录：<a target="_blank" rel="noopener" href="https://cmu.box.com/s/7ghw0bgkbqv5e7hu5jsznhlzuo4rexgx">https://cmu.box.com/s/7ghw0bgkbqv5e7hu5jsznhlzuo4rexgx</a></p>
+<p>代码：<a target="_blank" rel="noopener" href="https://github.com/b04901014/MQTTS">https://github.com/b04901014/MQTTS</a></p>
+<h2 id="some-sample"><a class="markdownIt-Anchor" href="#some-sample"></a> Some Sample</h2>
+<ul>
+<li>first issue um but going back to what he’s saying i’m hundred percent you have have snow tires um a rear wheel drive car is going to .</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">MQTTS(LJ-Speech embedding)</th>
+        <th align="center">MS-Jenny(微软Jenny发音人)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2023/04/11/MQTTS/MQTTS.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2023/04/11/MQTTS/MS-Jenny.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+<h2 id="论文及代码详解"><a class="markdownIt-Anchor" href="#论文及代码详解"></a> 论文及代码详解</h2>
+<p>框架图如下：<br>
+<img src="/2023/04/11/MQTTS/MQTTS.jpg" alt="MQTTS"></p>
+<p>模型推断大概的框架是（后续会详细解释推理细节）：</p>
+<ol>
+<li>音素和说话人信息作为条件信息</li>
+<li>自回归方式形成 <code>矢量</code></li>
+<li><code>矢量</code> 通过预训练的解码器得到语音波形</li>
+</ol>
+<p>模型训练主要分为两个部分，</p>
+<h3 id="quantization-of-raw-speech"><a class="markdownIt-Anchor" href="#quantization-of-raw-speech"></a> Quantization of Raw Speech</h3>
+<p>矢量量化框架主要借鉴 <a href="https://yuan1615.github.io/2022/01/21/HiFi-GAN/">HiFi-GAN</a> 的结构。Quantizer Decoder 的结构就是 HiFi-GAN 的生成器，Quantizer Encoder 就是把生成器的转置卷积换成了卷积操作。这里通用利用了对抗训练，判别器的结构还是和 HiFi-GAN 的判别器是一样的。</p>
+<p>主要的区别是有 <code>多码本</code> 的一个学习过程，在训练过程中不仅有对抗损失，同时加入了矢量量化损失。</p>
+<p><strong>这里可以利用Meta发布的预训练模型 <a target="_blank" rel="noopener" href="https://github.com/facebookresearch/encodec">encodec</a></strong>，微软的 VALL-E 就是这样的。</p>
+<ul>
+<li>Encoder</li>
+</ul>
+<p>一维卷积降低维度，膨胀卷积扩大感受野，降采样的过程是 [2, 2, 8, 8], 将[b, 1, 8192]维度的音频降低到 [b, 512, 32]</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">class Encoder(torch.nn.Module):</span><br><span class="line">    def __init__(self, h):</span><br><span class="line">        super(Encoder, self).__init__()</span><br><span class="line">        self.h &#x3D; h</span><br><span class="line">        self.num_kernels &#x3D; len(h.resblock_kernel_sizes)</span><br><span class="line">        self.num_upsamples &#x3D; len(h.upsample_rates)</span><br><span class="line">        self.conv_pre &#x3D; weight_norm(Conv1d(1, 32, 7, 1, padding&#x3D;3))</span><br><span class="line">        self.normalize &#x3D; nn.ModuleList()</span><br><span class="line">        resblock &#x3D; ResBlock1 if h.resblock &#x3D;&#x3D; &#39;1&#39; else ResBlock2</span><br><span class="line"></span><br><span class="line">        self.ups &#x3D; nn.ModuleList()</span><br><span class="line">        for i, (u, k) in enumerate(list(reversed(list(zip(h.upsample_rates, h.upsample_kernel_sizes))))):</span><br><span class="line">            self.ups.append(weight_norm(</span><br><span class="line">                Conv1d(32*(2**i), 32*(2**(i+1)),</span><br><span class="line">                       k, u, padding&#x3D;(u&#x2F;&#x2F;2 + u%2))))</span><br><span class="line"></span><br><span class="line">        self.resblocks &#x3D; nn.ModuleList()</span><br><span class="line">        for i in range(len(self.ups)):</span><br><span class="line">            ch &#x3D; 32*(2**(i+1))</span><br><span class="line">            for j, (k, d) in enumerate(zip(list(reversed(h.resblock_kernel_sizes)), list(reversed(h.resblock_dilation_sizes)))):</span><br><span class="line">                self.resblocks.append(resblock(h, ch, k, d))</span><br><span class="line">                self.normalize.append(torch.nn.GroupNorm(ch &#x2F;&#x2F; 16, ch, eps&#x3D;1e-6, affine&#x3D;True))</span><br><span class="line"></span><br><span class="line">        self.conv_post &#x3D; Conv1d(512, 512, 3, 1, padding&#x3D;1)</span><br><span class="line">        self.ups.apply(init_weights)</span><br><span class="line">        self.conv_post.apply(init_weights)</span><br><span class="line"></span><br><span class="line">    def forward(self, x):</span><br><span class="line">        # x.shape [b, 1, 8192], 8192 为音频的点的个数，沿用了 HiFi-GAN 中的</span><br><span class="line">        x &#x3D; self.conv_pre(x)</span><br><span class="line">        # x.shape [b, 32, 8192]</span><br><span class="line">        for i in range(self.num_upsamples):</span><br><span class="line">            x &#x3D; F.leaky_relu(x, LRELU_SLOPE)</span><br><span class="line">            x &#x3D; self.ups[i](x)</span><br><span class="line">            xs &#x3D; None</span><br><span class="line">            for j in range(self.num_kernels):</span><br><span class="line">                if xs is None:</span><br><span class="line">                    xs &#x3D; self.resblocks[i*self.num_kernels+j](x)</span><br><span class="line">                    xs &#x3D; self.normalize[i*self.num_kernels+j](xs)</span><br><span class="line">                else:</span><br><span class="line">                    xs +&#x3D; self.resblocks[i*self.num_kernels+j](x)</span><br><span class="line">                    xs &#x3D; self.normalize[i*self.num_kernels+j](xs)</span><br><span class="line">            x &#x3D; xs &#x2F; self.num_kernels</span><br><span class="line">        x &#x3D; F.leaky_relu(x)</span><br><span class="line">        x &#x3D; self.conv_post(x)</span><br><span class="line">        return x</span><br><span class="line"></span><br><span class="line">    def remove_weight_norm(self):</span><br><span class="line">        print(&#39;Removing weight norm...&#39;)</span><br><span class="line">        for l in self.ups:</span><br><span class="line">            remove_weight_norm(l)</span><br><span class="line">        for l in self.resblocks:</span><br><span class="line">            l.remove_weight_norm()</span><br><span class="line">        remove_weight_norm(self.conv_pre)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Quantizer</li>
+</ul>
+<p>简单理解矢量量化，就是四舍五入。这里利用 <code>nn.embedding</code> 去学习码本。我们通过上述 Encoder 进行了时间维度的压缩，压缩率为 256，即 1秒 16000 采样率的音频压缩之后就变成了 6.25 个时序点。但是存储每个点的这个值的范围还是很大的，就拿 16bit 来说，它可能的取值就是-32768到32767。这么大的范围给后续自回归预测带来了比较大的挑战，所里这里要进行矢量量化。具体来说就是每一个 16bit 映射到一个固定的 <code>整数</code>，这个整数的范围是0到159，这不是量化了呀，后续自回归预测也容易了很多。</p>
+<p>具体怎么进行映射呢？</p>
+<ol>
+<li>首先将Encoder后的向量 512 通道进行拆分，拆分成 4 份，每一份128维。因为后续有 4 个码本。</li>
+<li>分别计算这 4 份向量和 <code>nn.embedding.weight</code> 之间的欧式距离，取距离最近的 index 就得到了矢量。这里 <code>nn.embedding</code> 设置的矢量的个数是 160。</li>
+<li>矢量通过 <code>nn.embedding</code> 则得到了 z_q</li>
+<li>z_q 输入 Decoder 得到原始波形</li>
+<li>这里损失有两个，分别是对抗损失（还有一些 HiFi-GAN 中训练用的损失）和矢量量化损失（Encoder输出值和 z_q之间的损失）</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">class Quantizer_module(torch.nn.Module):</span><br><span class="line">    def __init__(self, n_e, e_dim):</span><br><span class="line">        # n_e 160</span><br><span class="line">        # e_dim 128</span><br><span class="line">        super(Quantizer_module, self).__init__()</span><br><span class="line">        self.embedding &#x3D; nn.Embedding(n_e, e_dim)</span><br><span class="line">        # nn.Embedding 是密码本，输入的是一个index，输出的是 128 维度的向量，index 总数为 160</span><br><span class="line">        self.embedding.weight.data.uniform_(-1.0 &#x2F; n_e, 1.0 &#x2F; n_e)</span><br><span class="line"></span><br><span class="line">    def forward(self, x):</span><br><span class="line">        # 这里是计算 x 与 码本之间的一个相似度，x的维度是 [512, 128], 可以理解为有 512 个128的向量，512根据时间长短不同，这个数值是不固定的</span><br><span class="line">        # 这里去分别寻找 这 512 个 128 维，和这个密码本 [160, 128]的最短距离，然后返回最短距离的这个 index, index 为密码本中的索引</span><br><span class="line">        d &#x3D; torch.sum(x ** 2, 1, keepdim&#x3D;True) + torch.sum(self.embedding.weight ** 2, 1) - 2 * torch.matmul(x, self.embedding.weight.T)</span><br><span class="line">        # 这里计算过程中利用了广播机制，实际就是计算了欧式距离，得到的就是 512 个向量和 160个密码本的两两相似度的一个矩阵</span><br><span class="line">        min_indicies &#x3D; torch.argmin(d, 1)</span><br><span class="line">        #</span><br><span class="line">        z_q &#x3D; self.embedding(min_indicies)</span><br><span class="line">        return z_q, min_indicies</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class Quantizer(torch.nn.Module):</span><br><span class="line">    def __init__(self, h):</span><br><span class="line">        super(Quantizer, self).__init__()</span><br><span class="line">        assert 512 % h.n_code_groups &#x3D;&#x3D; 0</span><br><span class="line">        self.quantizer_modules &#x3D; nn.ModuleList([</span><br><span class="line">            Quantizer_module(h.n_codes, 512 &#x2F;&#x2F; h.n_code_groups) for _ in range(h.n_code_groups)</span><br><span class="line">        ])</span><br><span class="line">        self.h &#x3D; h</span><br><span class="line"></span><br><span class="line">    def forward(self, xin):</span><br><span class="line">        #B, C, T</span><br><span class="line">        xin &#x3D; xin.transpose(1, 2)  # [16, 32, 512]</span><br><span class="line">        x &#x3D; xin.reshape(-1, 512)   # [512, 512]</span><br><span class="line">        x &#x3D; torch.split(x, 512 &#x2F;&#x2F; self.h.n_code_groups, dim&#x3D;-1)  # 将原始的 x 分成了四份，每份代表不同的 矢量</span><br><span class="line">        min_indicies &#x3D; []</span><br><span class="line">        z_q &#x3D; []</span><br><span class="line">        for _x, m in zip(x, self.quantizer_modules):</span><br><span class="line">            _z_q, _min_indicies &#x3D; m(_x)</span><br><span class="line">            z_q.append(_z_q)</span><br><span class="line">            min_indicies.append(_min_indicies) #B * T,</span><br><span class="line">        z_q &#x3D; torch.cat(z_q, -1).reshape(xin.shape)</span><br><span class="line">        loss &#x3D; 0.25 * torch.mean((z_q.detach() - xin) ** 2) + torch.mean((z_q - xin.detach()) ** 2)</span><br><span class="line">        z_q &#x3D; xin + (z_q - xin).detach()</span><br><span class="line">        z_q &#x3D; z_q.transpose(1, 2)</span><br><span class="line">        return z_q, loss, min_indicies</span><br><span class="line"></span><br><span class="line">    def embed(self, x):</span><br><span class="line">        #idx: N, T, 4</span><br><span class="line">        x &#x3D; torch.split(x, 1, 2)</span><br><span class="line">        ret &#x3D; []</span><br><span class="line">        for q, embed in zip(x, self.quantizer_modules):</span><br><span class="line">            q &#x3D; embed.embedding(q.squeeze(-1))</span><br><span class="line">            ret.append(q)</span><br><span class="line">        ret &#x3D; torch.cat(ret, -1)</span><br><span class="line">        return ret.transpose(1, 2) # N, C, T</span><br></pre></td></tr></table></figure>
+<h3 id="conditional-synthesis-with-transformer"><a class="markdownIt-Anchor" href="#conditional-synthesis-with-transformer"></a> Conditional Synthesis with Transformer</h3>
+<p>框架图如下所示：</p>
+<p><img src="/2023/04/11/MQTTS/MQTTS-Transformer.jpg" alt="MQTTS-Transformer"></p>
+<p>该模块的内容主要是利用 Transformer 自回归预测矢量，不过细节改动的比较多，包括：</p>
+<ol>
+<li>global speaker embedding，该模块的嵌入可以支持多说话人，嵌入使用预训练模型<a target="_blank" rel="noopener" href="https://huggingface.co/pyannote/embedding">pyannote</a>.</li>
+<li><code>ALiBi</code> replace positional encoding，该方法使得输入序列变很长的时候不会降低合成质量</li>
+<li>根据 TTS 的特性修改了对齐机制</li>
+<li>新增 Sub-Decoder 来预测不同码本对应的矢量</li>
+<li>根据语音特性用 Repetition Token 来标识和上一时刻重复的矢量</li>
+</ol>
+<p>详细结构如下：</p>
+<ul>
+<li>Phone Encoder</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">encoder &#x3D; TransformerEncoder(</span><br><span class="line">            nn.ModuleList(</span><br><span class="line">                [TransformerEncoderLayer(hp) for i in range(hp.enc_nlayers)]</span><br><span class="line">            )</span><br><span class="line">        )</span><br><span class="line"># 6层 TransformerEncoder</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class TransformerEncoderLayer(nn.Module):</span><br><span class="line">    def __init__(self, hp, dropout&#x3D;0.1):</span><br><span class="line">        super().__init__()</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        self.d_model &#x3D; hp.hidden_size                                                     # 768</span><br><span class="line">        self.dropout_p &#x3D; dropout                                                          # 0.1</span><br><span class="line">        self.self_attn &#x3D; MultiheadAttention(self.d_model, hp.nheads, dropout&#x3D;0.1)         # 12</span><br><span class="line">        # Implementation of Feedforward model</span><br><span class="line">        self.linear1 &#x3D; nn.Linear(self.d_model, hp.ffd_size)                               # ffd_size:3072</span><br><span class="line">        self.dropout &#x3D; nn.Dropout(dropout)                                                # 0.1</span><br><span class="line">        self.linear2 &#x3D; nn.Linear(hp.ffd_size, self.d_model)</span><br><span class="line"></span><br><span class="line">        self.norm1 &#x3D; nn.LayerNorm(self.d_model, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.norm2 &#x3D; nn.LayerNorm(self.d_model, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.dropout1 &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.dropout2 &#x3D; nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">        self.activation &#x3D; nn.GELU()</span><br><span class="line"></span><br><span class="line">    def forward(self, src, src_mask&#x3D;None, attn_bias&#x3D;None, src_key_padding_mask&#x3D;None):</span><br><span class="line">        res, self_attn &#x3D; self.self_attn(src, src, src, attn_mask&#x3D;src_mask, attn_bias&#x3D;attn_bias,</span><br><span class="line">                                        key_padding_mask&#x3D;src_key_padding_mask)</span><br><span class="line">        src &#x3D; src + self.dropout1(res)</span><br><span class="line">        src &#x3D; self.norm1(src)</span><br><span class="line">        res &#x3D; self.linear2(self.dropout(self.activation(self.linear1(src))))</span><br><span class="line">        src &#x3D; src + self.dropout2(res)</span><br><span class="line">        src &#x3D; self.norm2(src)</span><br><span class="line">        return src, self_attn</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Decoder</li>
+</ul>
+<p>整体框架和 Encoder 类似，为 6 层 TransformerDecoderLayer。输入为 q_input，这里的 q_input 是真实值的一个错位，q_input 的第 0 时间是 [161, 161, 161, 161] 这样的特殊标识，第 1 时间为 q 的第 0 时间的真实值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line">self.decoder &#x3D; TransformerDecoder(</span><br><span class="line">    nn.ModuleList(</span><br><span class="line">        [TransformerDecoderLayer(hp, with_cross_attention&#x3D;False) for i in range(hp.dec_nlayers)]</span><br><span class="line">    )</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">class TransformerDecoderLayer(nn.Module):</span><br><span class="line">    def __init__(self, hp, with_cross_attention, dropout&#x3D;0.1):</span><br><span class="line">        super().__init__()</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        self.d_model &#x3D; hp.hidden_size                                                       # 256</span><br><span class="line">        self.dropout_p &#x3D; dropout                                                            # 0.1</span><br><span class="line">        self.self_attn &#x3D; MultiheadAttention(self.d_model, hp.nheads, dropout&#x3D;0.1)           # nheads: 4</span><br><span class="line">        self.with_cross_attention &#x3D; with_cross_attention                                    # False</span><br><span class="line">        if with_cross_attention:</span><br><span class="line">            self.multihead_attn &#x3D; MultiheadAttention(self.d_model, hp.nheads, dropout&#x3D;0.1)</span><br><span class="line">            self.norm2 &#x3D; nn.LayerNorm(self.d_model, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">            self.dropout2 &#x3D; nn.Dropout(dropout)</span><br><span class="line">        # 这里区分了两个，一个是 self_attn, 一个是 multihead_attn，（其实这里命名是有点不规范的）</span><br><span class="line">        # self_attn 是自己和自己做 attn，也可以是多头的注意力</span><br><span class="line">        # multihead_attn 是自己和别人做 attn，也可以是多头的注意力，命名应该改成 cross_attention 更合理</span><br><span class="line"></span><br><span class="line">        # Implementation of Feedforward model</span><br><span class="line">        self.linear1 &#x3D; nn.Linear(self.d_model, hp.ffd_size)</span><br><span class="line">        self.dropout &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.linear2 &#x3D; nn.Linear(hp.ffd_size, self.d_model)</span><br><span class="line"></span><br><span class="line">        self.norm1 &#x3D; nn.LayerNorm(self.d_model, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.norm3 &#x3D; nn.LayerNorm(self.d_model, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.dropout1 &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.dropout3 &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.activation &#x3D; nn.GELU()</span><br><span class="line"></span><br><span class="line">    def forward(self, tgt, memory&#x3D;None, tgt_mask&#x3D;None, attn_bias&#x3D;None,</span><br><span class="line">                tgt_key_padding_mask&#x3D;None, memory_key_padding_mask&#x3D;None, past_kv&#x3D;None):</span><br><span class="line">        tgt2, self_attn &#x3D; self.self_attn(tgt, tgt, tgt, attn_mask&#x3D;tgt_mask, attn_bias&#x3D;attn_bias,</span><br><span class="line">                                         key_padding_mask&#x3D;tgt_key_padding_mask, past_kv&#x3D;past_kv)</span><br><span class="line">        tgt &#x3D; tgt + self.dropout1(tgt2)</span><br><span class="line">        tgt &#x3D; self.norm1(tgt)</span><br><span class="line">        attn &#x3D; None</span><br><span class="line">        if self.with_cross_attention:</span><br><span class="line">            assert memory is not None</span><br><span class="line">            tgt2, attn &#x3D; self.multihead_attn(tgt, memory, memory,</span><br><span class="line">                                             key_padding_mask&#x3D;memory_key_padding_mask, past_kv&#x3D;past_kv)</span><br><span class="line">            tgt &#x3D; tgt + self.dropout2(tgt2)</span><br><span class="line">            tgt &#x3D; self.norm2(tgt)</span><br><span class="line">        tgt2 &#x3D; self.linear2(self.dropout(self.activation(self.linear1(tgt))))</span><br><span class="line">        tgt &#x3D; tgt + self.dropout3(tgt2)</span><br><span class="line">        tgt &#x3D; self.norm3(tgt)</span><br><span class="line">        return tgt, attn, self_attn</span><br><span class="line"></span><br><span class="line">class TransformerDecoder(nn.Module):</span><br><span class="line">    def __init__(self, decoder_layers):</span><br><span class="line">        super().__init__()</span><br><span class="line">        self.layers &#x3D; decoder_layers</span><br><span class="line">        self.num_layers &#x3D; len(decoder_layers)</span><br><span class="line"></span><br><span class="line">    def forward(self, tgt, memory, tgt_mask&#x3D;None, attn_bias&#x3D;None,</span><br><span class="line">                tgt_key_padding_mask&#x3D;None, memory_key_padding_mask&#x3D;None, past_kvs&#x3D;None):</span><br><span class="line">        output &#x3D; tgt</span><br><span class="line">        # print(output)</span><br><span class="line">        # print(output.shape)</span><br><span class="line">        # raise OSError(&#39;end&#39;)</span><br><span class="line">        attns &#x3D; []</span><br><span class="line">        self_attns &#x3D; []</span><br><span class="line">        outputs &#x3D; []</span><br><span class="line">        if past_kvs is None:</span><br><span class="line">            past_kvs &#x3D; [None for _ in range(len(self.layers))]</span><br><span class="line">        for i, mod in enumerate(self.layers):</span><br><span class="line">            output, attn, self_attn &#x3D; mod(output, memory, tgt_mask&#x3D;tgt_mask, attn_bias&#x3D;attn_bias,</span><br><span class="line">                                          tgt_key_padding_mask&#x3D;tgt_key_padding_mask,</span><br><span class="line">                                          memory_key_padding_mask&#x3D;memory_key_padding_mask,</span><br><span class="line">                                          past_kv&#x3D;past_kvs[i])</span><br><span class="line">            if attn is not None:</span><br><span class="line">                attns.append(attn.detach())</span><br><span class="line">            if self_attn is not None:</span><br><span class="line">                self_attns.append(self_attn.detach())</span><br><span class="line">            outputs.append(output)</span><br><span class="line">        return output, attns, self_attns, outputs</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Aligner</li>
+</ul>
+<p>可以理解为 Decoder 的最后一层，仅仅最后一层使用了 CrossAttn。这里获得了 phone 和 q_input 共同作用之后的信息，同时获得了对齐信息。Aligner采用了单头注意力。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">output, alignment &#x3D; self.aligner(output, phone, tgt_mask&#x3D;tgt_mask,</span><br><span class="line">                                tgt_key_padding_mask&#x3D;q_mask, memory_key_padding_mask&#x3D;phone_mask)</span><br><span class="line"></span><br><span class="line">class CrossAttnOnlyLayer(nn.Module):</span><br><span class="line">    def __init__(self, hp, dropout&#x3D;0.1):</span><br><span class="line">        super().__init__()</span><br><span class="line">        self.dropout_p &#x3D; dropout</span><br><span class="line">        #Only one head for alignment!</span><br><span class="line">        self.multihead_attn &#x3D; MultiheadAttention(hp.hidden_size, 1, dropout&#x3D;0.1, softmax_temp&#x3D;hp.aligner_softmax_temp)</span><br><span class="line">        # Implementation of Feedforward model</span><br><span class="line">        self.linear1 &#x3D; nn.Linear(hp.hidden_size, hp.ffd_size)</span><br><span class="line">        self.dropout &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.linear2 &#x3D; nn.Linear(hp.ffd_size, hp.hidden_size)</span><br><span class="line"></span><br><span class="line">        self.norm1 &#x3D; nn.LayerNorm(hp.hidden_size, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.norm2 &#x3D; nn.LayerNorm(hp.hidden_size, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.dropout1 &#x3D; nn.Dropout(dropout)</span><br><span class="line">        self.dropout2 &#x3D; nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">        self.activation &#x3D; nn.GELU()</span><br><span class="line"></span><br><span class="line">    def forward(self, tgt, memory, tgt_mask&#x3D;None,</span><br><span class="line">                tgt_key_padding_mask&#x3D;None, memory_key_padding_mask&#x3D;None):</span><br><span class="line">        tgt2, attn &#x3D; self.multihead_attn(tgt, memory, memory,</span><br><span class="line">                                         key_padding_mask&#x3D;memory_key_padding_mask)</span><br><span class="line">        tgt &#x3D; tgt + self.dropout1(tgt2)</span><br><span class="line">        tgt &#x3D; self.norm1(tgt)</span><br><span class="line">        tgt2 &#x3D; self.linear2(self.dropout(self.activation(self.linear1(tgt))))</span><br><span class="line">        tgt &#x3D; tgt + self.dropout2(tgt2)</span><br><span class="line">        tgt &#x3D; self.norm2(tgt)</span><br><span class="line">        return tgt, attn</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>Sub-Decoder</li>
+</ul>
+<p>自回归形式预测 <code>矢量q</code>，同时引入了 【R】标识</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">audio_output &#x3D; self.transducer.decode(audio_output, q_input)</span><br><span class="line"># audio_output [B, T, 4, 163], 其中 163 为每个矢量的概率，矢量为 163 个</span><br><span class="line"></span><br><span class="line">class ARCodeTransformer(nn.Module):</span><br><span class="line">    def __init__(self, hp, n_decoder_codes):</span><br><span class="line">        super().__init__()</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        ar_hp &#x3D; Namespace(hidden_size&#x3D;hp.ar_hidden_size, nheads&#x3D;hp.ar_nheads, layer_norm_eps&#x3D;hp.layer_norm_eps,</span><br><span class="line">                          ffd_size&#x3D;hp.ar_ffd_size)</span><br><span class="line">        self.model &#x3D; TransformerDecoder(</span><br><span class="line">            nn.ModuleList(</span><br><span class="line">                [TransformerDecoderLayer(ar_hp, with_cross_attention&#x3D;False) for i in range(hp.ar_layer)]</span><br><span class="line">            )</span><br><span class="line">        )</span><br><span class="line">        self.embedding &#x3D; nn.ModuleList(</span><br><span class="line">            [</span><br><span class="line">                nn.Embedding(n_decoder_codes, hp.ar_hidden_size) for _ in range(self.hp.n_cluster_groups - 1)</span><br><span class="line">            ]</span><br><span class="line">        )</span><br><span class="line">        # ?这里的 embedding 为什么只有3个，不是 4 个呢? 因为第一个输入为 cond 不需要 embedding</span><br><span class="line"></span><br><span class="line">        self.linear &#x3D; nn.Linear(hp.hidden_size, hp.ar_hidden_size)</span><br><span class="line">        self.layer_norm &#x3D; nn.LayerNorm(hp.ar_hidden_size, eps&#x3D;hp.layer_norm_eps)</span><br><span class="line">        self.decoders &#x3D; nn.ModuleList([</span><br><span class="line">            nn.Linear(hp.ar_hidden_size, n_decoder_codes)</span><br><span class="line">            for i in range(hp.n_cluster_groups)</span><br><span class="line">        ])</span><br><span class="line">        tgt_mask &#x3D; (torch.tril(torch.ones(hp.n_cluster_groups, hp.n_cluster_groups), diagonal&#x3D;0) &#x3D;&#x3D; 0)</span><br><span class="line">        self.register_buffer(&#39;tgt_mask&#39;, tgt_mask)</span><br><span class="line"></span><br><span class="line">    def forward(self, cond, gt):</span><br><span class="line">        #cond: N, T, C</span><br><span class="line">        #gt: N, T, 4</span><br><span class="line">        #return: N, T, 4, n_codes</span><br><span class="line">        N, T, _ &#x3D; cond.size()</span><br><span class="line">        cond, gt &#x3D; cond.reshape(N * T, -1), gt.reshape(N * T, -1)</span><br><span class="line">        # print(cond.shape)   [N*T, 768]</span><br><span class="line">        # print(gt.shape)     [N*T, 4]</span><br><span class="line"></span><br><span class="line">        cond &#x3D; self.linear(cond)  # [N*T, 256]</span><br><span class="line"></span><br><span class="line">        gt &#x3D; gt[:, : -1] #NT, 3</span><br><span class="line">        gt_in &#x3D; []</span><br><span class="line">        for i in range(self.hp.n_cluster_groups - 1):</span><br><span class="line">            gt_in.append(self.embedding[i](gt[:, i])) #3 [NT, C] 【NT， 256】</span><br><span class="line"></span><br><span class="line">        inp &#x3D; torch.stack([cond] + gt_in, 1) #NT, 4, C</span><br><span class="line">        # inp 是自回归的 input，第 0 位就是 cond，第一位是上一个真实的值，依次类推，</span><br><span class="line">        inp &#x3D; self.layer_norm(inp)</span><br><span class="line">        out, _, _, _ &#x3D; self.model(inp, memory&#x3D;None, tgt_mask&#x3D;self.tgt_mask)</span><br><span class="line">        # out 是预测的 q，根据上一个预测的下一个，这里用到 teacher-force，因此训练阶段是并行的</span><br><span class="line">        ret &#x3D; []</span><br><span class="line">        for i in range(self.hp.n_cluster_groups):</span><br><span class="line">            ret.append(self.decoders[i](out[:, i]))</span><br><span class="line">        ret &#x3D; torch.stack(ret, 1).reshape(N, T, self.hp.n_cluster_groups, -1)</span><br><span class="line">        # 将 q 恢复成 【N, T, 4， 163】 的维度</span><br><span class="line">        return ret</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>最后通过交叉熵损失训练模型。</p>
+<h3 id="推理过程从文本合成音频"><a class="markdownIt-Anchor" href="#推理过程从文本合成音频"></a> 推理过程（从文本合成音频）</h3>
+<ol>
+<li>干净的语音作为 Prompt，为了生成相对干净的音频，因为训练过程利用的 ASR 的音频，质量比较低。所以这里输入干净的语音作为 Prompt。</li>
+<li>单调对齐，同时利用单调对齐进行停止的判断，而不是利用一个二分类器，这样得到的会更加稳定。</li>
+</ol>
+<ul>
+<li>Prompt</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">low_background_noise &#x3D; torch.randn(batch_size, int(self.hp.sample_rate * 5.0)) * self.hp.prior_noise_level</span><br><span class="line"># print(low_background_noise.shape) [b, 80000] , 5秒干净的音频作为 Prompt 背景噪声很小</span><br><span class="line">#             &#39;prior_noise_level&#39;: 1e-5,</span><br><span class="line">base_prior &#x3D; self.vocoder.encode(low_background_noise.cuda())</span><br><span class="line"># 将音频进行矢量量化</span><br><span class="line"># print(base_prior.shape)  [b, 312, 4]</span><br><span class="line">if self.hp.clean_speech_prior:</span><br><span class="line">    prior &#x3D; base_prior[:, :self.hp.prior_frame]</span><br><span class="line">    # 取前 3 帧就够 promte 了</span><br><span class="line">    # print(prior) [b, 3, 4]</span><br><span class="line">else:</span><br><span class="line">    prior &#x3D; None</span><br></pre></td></tr></table></figure>
+<ul>
+<li>自回归生成</li>
+</ul>
+<p>输入为 phone、speaker_embedding 和 Prompt，输出为以该 speaker 为说话人的语音。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">synthetic &#x3D; self.TTSdecoder.inference_topkp_sampling_batch(phone_features, speaker_embedding, phone_masks, prior&#x3D;prior)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br></pre></td><td class="code"><pre><span class="line">def inference_topkp_sampling_batch(self, phone, spkr, phone_mask, prior&#x3D;None, output_alignment&#x3D;False):</span><br><span class="line">    batch_size &#x3D; phone.size(0)</span><br><span class="line">    final_outputs &#x3D; [0 for _ in range(batch_size)]</span><br><span class="line">    spkr &#x3D; self.layer_norm_spkr(spkr.unsqueeze(1))</span><br><span class="line">    inp &#x3D; self.layer_norm(self.transducer.start_token(phone.device)) #1, 1, C</span><br><span class="line">    # print(inp)</span><br><span class="line">    # print(inp.shape)  # [1, 1, 768]</span><br><span class="line">    # start_token 是 161</span><br><span class="line">    inp &#x3D; inp.expand(batch_size, -1, -1) #N, 1, C</span><br><span class="line">    inp &#x3D; torch.cat([spkr, inp], 1)</span><br><span class="line">    # 嵌入 spkr</span><br><span class="line"></span><br><span class="line">    prior_size &#x3D; 0</span><br><span class="line">    if prior is not None:</span><br><span class="line">        prior &#x3D; self.transducer.encode(prior)</span><br><span class="line">        prior &#x3D; self.layer_norm(prior)</span><br><span class="line">        prior_size &#x3D; prior.size(1)</span><br><span class="line">        inp &#x3D; torch.cat([inp, prior], 1)</span><br><span class="line">    # 加入静音片段作为 Prompt</span><br><span class="line">    phone &#x3D; self.encode_phone(phone, spkr, phone_mask)</span><br><span class="line">    tgt_mask &#x3D; self.tgt_mask[:inp.size(1), :inp.size(1)].to(inp.device)</span><br><span class="line">    inps &#x3D; inp</span><br><span class="line">    #Decode</span><br><span class="line">    past_kvs1, past_kv_cross, past_kvs2, clusters &#x3D; None, None, None, torch.empty([batch_size, 0, self.hp.n_cluster_groups], device&#x3D;phone.device, dtype&#x3D;torch.long)</span><br><span class="line">    audio_alibi &#x3D; self.alibi(inp)</span><br><span class="line">    audio_alibi[:, 0] &#x3D; 0</span><br><span class="line">    audio_alibi[:, :, 0] &#x3D; 0</span><br><span class="line">    back_map &#x3D; torch.zeros([batch_size, 1], device&#x3D;phone.device, dtype&#x3D;torch.long)</span><br><span class="line">    # 和 batch_size 为行的 0 向量</span><br><span class="line"></span><br><span class="line">    length_counter &#x3D; torch.zeros([batch_size], device&#x3D;phone.device, dtype&#x3D;torch.long)</span><br><span class="line">    real_phone_lengths &#x3D; (~phone_mask).long().sum(-1) #N,</span><br><span class="line">    if output_alignment:</span><br><span class="line">        assert batch_size &#x3D;&#x3D; 1, &quot;Now only support output alignment for bs &#x3D; 1 for debugging issues...&quot;</span><br><span class="line">        alignment &#x3D; torch.zeros((1, self.hp.max_output_length, self.hp.max_output_length), device&#x3D;phone.device)</span><br><span class="line">    for i in range(self.hp.max_output_length):</span><br><span class="line">        cond, _, _, new_1 &#x3D; self.decoder(inp, memory&#x3D;None, attn_bias&#x3D;audio_alibi, tgt_mask&#x3D;tgt_mask, past_kvs&#x3D;past_kvs1)</span><br><span class="line">        # cond.shape: [B, 5, 768], 5 分别是 spk， 开始token 和 3个 Prompt</span><br><span class="line"></span><br><span class="line">        #Only feed in the current frame and the next frame attending!</span><br><span class="line">        t_length, c_length &#x3D; phone.size(1), phone.size(2) # T, C&#x3D;768</span><br><span class="line">        selected_phone &#x3D; phone.reshape(-1, c_length) #N*T, C</span><br><span class="line">        index_map &#x3D; torch.arange(self.hp.phone_context_window, device&#x3D;phone.device)  # [0, 1, 2]</span><br><span class="line">        index_map &#x3D; back_map[:, -1:] + index_map.repeat(batch_size, 1)</span><br><span class="line">        # back_map 最后一列 + index_map</span><br><span class="line">        # 这里应该是求 单调对齐的</span><br><span class="line"></span><br><span class="line">        add &#x3D; torch.arange(batch_size, device&#x3D;index_map.device).unsqueeze(1) #N, 1</span><br><span class="line"></span><br><span class="line">        index_map &#x3D; index_map + add * t_length    # 由于处理过程中将 batch 拉平了，所以 index 需要特殊处理</span><br><span class="line">        index_map &#x3D; index_map.reshape(-1) #N * 3  # phone 是被拉长了的！</span><br><span class="line">        selected_phone &#x3D; selected_phone[index_map].reshape(batch_size, self.hp.phone_context_window, c_length) #N*3, C</span><br><span class="line">        #Mask for the starting phones</span><br><span class="line">        phone_mask &#x3D; torch.arange(self.hp.phone_context_window, device&#x3D;phone.device).repeat(batch_size, 1)</span><br><span class="line">        phone_mask &#x3D; (phone_mask &lt;&#x3D; (back_map[:, -1:] + 1).expand(-1, self.hp.phone_context_window))</span><br><span class="line">        phone_mask &#x3D; ~phone_mask</span><br><span class="line">        cond, _align &#x3D; self.aligner(cond, selected_phone, tgt_mask&#x3D;tgt_mask, memory_key_padding_mask&#x3D;phone_mask)</span><br><span class="line">        # 仅仅利用部分 phone 进行计算，不需要全局的！</span><br><span class="line"></span><br><span class="line">        cond &#x3D; cond[:, -1].unsqueeze(1) #N, 1, C</span><br><span class="line"></span><br><span class="line">        #Run sub-decoder inference</span><br><span class="line">        output &#x3D; []</span><br><span class="line">        for j in range(self.hp.n_cluster_groups):</span><br><span class="line">            # 循环预测每一个码本的矢量</span><br><span class="line">            q_input &#x3D; torch.cat(output, 1) if j else None</span><br><span class="line">            logit &#x3D; self.transducer.decoder.infer(cond, q_input) #N, n_codes , 9, 163</span><br><span class="line">            #Block Start Token</span><br><span class="line">            logit[:, self.hp.n_codes + 1] &#x3D; -float(&quot;Inf&quot;)        # 删除没用的标识符号</span><br><span class="line">            #Don&#39;t output stop token if alignment not near end</span><br><span class="line">            # print(real_phone_lengths)</span><br><span class="line">            logit_tmp &#x3D; logit[back_map[:, -1] &lt; (real_phone_lengths - 2)]</span><br><span class="line">            # print(back_map)</span><br><span class="line">            # print(logit_tmp.shape)</span><br><span class="line">            # raise OSError(&#39;end&#39;)</span><br><span class="line">            logit_tmp[:, self.hp.n_codes] &#x3D; -float(&quot;Inf&quot;)</span><br><span class="line">            logit[back_map[:, -1] &lt; (real_phone_lengths - 2)] &#x3D; logit_tmp</span><br><span class="line">            #Repetition penalty</span><br><span class="line">            if self.hp.use_repetition_token and self.hp.repetition_penalty !&#x3D; 1.0:</span><br><span class="line">                logit[:, self.hp.n_codes + 2] &#x2F;&#x3D; self.hp.repetition_penalty</span><br><span class="line">            if self.hp.use_repetition_gating:</span><br><span class="line">                logit[:, self.hp.n_codes + 2] &#x3D; torch.min(torch.max(logit[:, :self.hp.n_codes]), logit[:, self.hp.n_codes + 2])</span><br><span class="line">            #Top_p</span><br><span class="line">            if self.hp.top_p &lt; 1.0 and self.hp.top_p &gt; 0.0:</span><br><span class="line">                sorted_logits, sorted_idxs &#x3D; torch.sort(logit, descending&#x3D;True)</span><br><span class="line">                cum_probs &#x3D; torch.cumsum(torch.softmax(sorted_logits, dim&#x3D;-1), dim&#x3D;-1)</span><br><span class="line">                additional_prob &#x3D; (self.hp.length_penalty_max_prob - self.hp.top_p) * (length_counter &#x2F; self.hp.length_penalty_max_length)</span><br><span class="line">                idx_to_remove &#x3D; cum_probs &gt; (self.hp.top_p + additional_prob).unsqueeze(-1)</span><br><span class="line">                idx_to_remove[:, :self.hp.min_top_k] &#x3D; False</span><br><span class="line">                idx_to_remove &#x3D; idx_to_remove.scatter(1, sorted_idxs, idx_to_remove)</span><br><span class="line">                logit[idx_to_remove] &#x3D; -float(&quot;Inf&quot;)</span><br><span class="line">            #Sampling</span><br><span class="line">            probs &#x3D; torch.softmax(logit &#x2F; self.hp.sampling_temperature, dim&#x3D;-1)</span><br><span class="line">            idx &#x3D; torch.multinomial(probs, 1) #N, 1</span><br><span class="line">            #If is repetition token</span><br><span class="line">            if self.hp.use_repetition_token:</span><br><span class="line">                if clusters.size(1) &#x3D;&#x3D; 0: #First token, random choice</span><br><span class="line">                    idx[idx&#x3D;&#x3D;(self.hp.n_codes + 2)] &#x3D; torch.randint(self.hp.n_codes, size&#x3D;(1,), device&#x3D;idx.device)</span><br><span class="line">                else:</span><br><span class="line">                    idx[idx&#x3D;&#x3D;(self.hp.n_codes + 2)] &#x3D; clusters[:, -1:, j][idx&#x3D;&#x3D;(self.hp.n_codes + 2)]</span><br><span class="line">            output.append(idx)</span><br><span class="line">        output &#x3D; torch.cat(output, 1).unsqueeze(1) #N, 1, n_groups</span><br><span class="line">        # output: t&#x3D;1 时刻的矢量</span><br><span class="line"></span><br><span class="line">        #Stop criterion</span><br><span class="line">        stopping_streams &#x3D; (back_map[:, -1] &#x3D;&#x3D; (real_phone_lengths - self.hp.phone_context_window))</span><br><span class="line">        stopping_streams &#x3D; (stopping_streams &amp; self.transducer.is_end_token_batch(output)) | (stopping_streams &amp; (torch.argmax(_align[:, 0, -1], dim&#x3D;-1) &#x3D;&#x3D; self.hp.phone_context_window - 1)) #N,</span><br><span class="line">        if i &#x3D;&#x3D; self.hp.max_output_length - 1:</span><br><span class="line">            stopping_streams[:] &#x3D; True</span><br><span class="line">        stopping_streams_idx &#x3D; np.where(stopping_streams.detach().cpu().numpy())[0]</span><br><span class="line">        num_stopped &#x3D; stopping_streams.long().sum().item()</span><br><span class="line">        if num_stopped &gt; 0:</span><br><span class="line">            stopped &#x3D; clusters[stopping_streams]</span><br><span class="line">            n_seats, stop_seats &#x3D; 0, 0</span><br><span class="line">            for n_s, seat in enumerate(final_outputs):</span><br><span class="line">                if type(seat) &#x3D;&#x3D; int:</span><br><span class="line">                    n_seats +&#x3D; 1</span><br><span class="line">                    if n_seats - 1 in stopping_streams_idx:</span><br><span class="line">#                            print (n_seats, stopping_streams_idx, stopped.size(), stop_seats)</span><br><span class="line">                        final_outputs[n_s] &#x3D; stopped[stop_seats]</span><br><span class="line">                        stop_seats +&#x3D; 1</span><br><span class="line">        n_remained &#x3D; sum([int(type(x) &#x3D;&#x3D; int) for x in final_outputs])</span><br><span class="line">        if n_remained &#x3D;&#x3D; 0:</span><br><span class="line">            break</span><br><span class="line">        #Trim batches</span><br><span class="line">        batch_size &#x3D; batch_size - num_stopped</span><br><span class="line">        output &#x3D; output[~stopping_streams]</span><br><span class="line">        phone &#x3D; phone[~stopping_streams]</span><br><span class="line">        real_phone_lengths &#x3D; real_phone_lengths[~stopping_streams]</span><br><span class="line">        clusters &#x3D; clusters[~stopping_streams]</span><br><span class="line">        back_map &#x3D; back_map[~stopping_streams]</span><br><span class="line">        length_counter &#x3D; length_counter[~stopping_streams]</span><br><span class="line">        _align &#x3D; _align[~stopping_streams]</span><br><span class="line">        news &#x3D; [inps] + new_1</span><br><span class="line">        inps &#x3D; inps[~stopping_streams]</span><br><span class="line">        for layer in range(len(news)):</span><br><span class="line">            news[layer] &#x3D; news[layer][~stopping_streams]</span><br><span class="line">        if past_kvs1 is not None:</span><br><span class="line">            for layer in range(len(past_kvs1)):</span><br><span class="line">                past_kvs1[layer] &#x3D; past_kvs1[layer][~stopping_streams]</span><br><span class="line"></span><br><span class="line">        #Update args</span><br><span class="line">        tgt_mask &#x3D; self.tgt_mask[i+3+prior_size, :i+3+prior_size].to(phone.device).unsqueeze(0)</span><br><span class="line">        audio_alibi &#x3D; self.alibi(tgt_mask)[:, -1].unsqueeze(1)</span><br><span class="line">        audio_alibi[:, :, 0] &#x3D; 0</span><br><span class="line">        if output_alignment:</span><br><span class="line">            alignment[:, i, back_map[0, -1]: back_map[0, -1]+self.hp.phone_context_window] &#x3D; _align[:, 0, -1].unsqueeze(0)</span><br><span class="line">        next_idx &#x3D; (_align[:, 0, -1, 0] &lt; (1 &#x2F; self.hp.phone_context_window)).long()</span><br><span class="line">        next_idx[length_counter &gt;&#x3D; self.hp.length_penalty_max_length] &#x3D; 1</span><br><span class="line">        new_bk &#x3D; torch.minimum(back_map[:, -1] + next_idx, real_phone_lengths - self.hp.phone_context_window)</span><br><span class="line">        back_map &#x3D; torch.cat([back_map, new_bk.unsqueeze(1)], 1)</span><br><span class="line">        length_counter[next_idx &#x3D;&#x3D; 0] +&#x3D; 1</span><br><span class="line">        length_counter[next_idx !&#x3D; 0] &#x3D; 0</span><br><span class="line">        if i &#x3D;&#x3D; 0:</span><br><span class="line">            past_kvs1 &#x3D; news[:self.hp.dec_nlayers]</span><br><span class="line">        else:</span><br><span class="line">            news &#x3D; [x[:, -1:] for x in news]</span><br><span class="line">            for ii, (p, n) in enumerate(zip(past_kvs1, news[:self.hp.dec_nlayers])):</span><br><span class="line">                past_kvs1[ii] &#x3D; torch.cat([p, n], 1)</span><br><span class="line"></span><br><span class="line">        inp &#x3D; self.transducer.encode(output)</span><br><span class="line">        inp &#x3D; self.layer_norm(inp)</span><br><span class="line">        inps &#x3D; torch.cat([inps, inp], 1)</span><br><span class="line">        clusters &#x3D; torch.cat([clusters, output], 1) #N, T, 4</span><br><span class="line">    if output_alignment:</span><br><span class="line">        return final_outputs, alignment[:, :i, :phone.size(1)]</span><br><span class="line">    return final_outputs</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>将矢量解码，得到语音</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">synthetic &#x3D; self.vocoder(padded_synthetic, norm_spkr)</span><br></pre></td></tr></table></figure>
+<h3 id="中文模型wenetspeech"><a class="markdownIt-Anchor" href="#中文模型wenetspeech"></a> 中文模型（WeNetSpeech）</h3>
+<h3 id="中文模型在录制数据上微调解决-wenetspeech-数据标注不准确的问题"><a class="markdownIt-Anchor" href="#中文模型在录制数据上微调解决-wenetspeech-数据标注不准确的问题"></a> 中文模型在录制数据上微调，解决 WeNetSpeech 数据标注不准确的问题</h3>
+<h3 id="中英文混合模型gigaspeech-wenetspeech"><a class="markdownIt-Anchor" href="#中英文混合模型gigaspeech-wenetspeech"></a> 中英文混合模型（GigaSpeech + WeNetSpeech）</h3>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/12/11/NVC-Net/" rel="prev" title="NVC-Net">
+      <i class="fa fa-chevron-left"></i> NVC-Net
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#paper"><span class="nav-number">1.</span> <span class="nav-text"> Paper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#some-sample"><span class="nav-number">2.</span> <span class="nav-text"> Some Sample</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BA%E6%96%87%E5%8F%8A%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">3.</span> <span class="nav-text"> 论文及代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#quantization-of-raw-speech"><span class="nav-number">3.1.</span> <span class="nav-text"> Quantization of Raw Speech</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#conditional-synthesis-with-transformer"><span class="nav-number">3.2.</span> <span class="nav-text"> Conditional Synthesis with Transformer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E7%90%86%E8%BF%87%E7%A8%8B%E4%BB%8E%E6%96%87%E6%9C%AC%E5%90%88%E6%88%90%E9%9F%B3%E9%A2%91"><span class="nav-number">3.3.</span> <span class="nav-text"> 推理过程（从文本合成音频）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E6%96%87%E6%A8%A1%E5%9E%8Bwenetspeech"><span class="nav-number">3.4.</span> <span class="nav-text"> 中文模型（WeNetSpeech）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E6%96%87%E6%A8%A1%E5%9E%8B%E5%9C%A8%E5%BD%95%E5%88%B6%E6%95%B0%E6%8D%AE%E4%B8%8A%E5%BE%AE%E8%B0%83%E8%A7%A3%E5%86%B3-wenetspeech-%E6%95%B0%E6%8D%AE%E6%A0%87%E6%B3%A8%E4%B8%8D%E5%87%86%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.5.</span> <span class="nav-text"> 中文模型在录制数据上微调，解决 WeNetSpeech 数据标注不准确的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E8%8B%B1%E6%96%87%E6%B7%B7%E5%90%88%E6%A8%A1%E5%9E%8Bgigaspeech-wenetspeech"><span class="nav-number">3.6.</span> <span class="nav-text"> 中英文混合模型（GigaSpeech + WeNetSpeech）</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

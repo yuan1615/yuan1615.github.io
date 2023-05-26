@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一种直接利用原始音频的语音转换系统，可实现 zero-shot 语音转换。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NVC-Net">
+<meta property="og:url" content="https://yuan1615.github.io/2022/12/11/NVC-Net/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="一种直接利用原始音频的语音转换系统，可实现 zero-shot 语音转换。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2022/12/11/NVC-Net/overview.jpg">
+<meta property="article:published_time" content="2022-12-11T01:15:00.000Z">
+<meta property="article:modified_time" content="2023-01-03T12:55:35.110Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="Voice Conversion">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2022/12/11/NVC-Net/overview.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/12/11/NVC-Net/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>NVC-Net | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/12/11/NVC-Net/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NVC-Net
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-12-11 09:15:00" itemprop="dateCreated datePublished" datetime="2022-12-11T09:15:00+08:00">2022-12-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-01-03 20:55:35" itemprop="dateModified" datetime="2023-01-03T20:55:35+08:00">2023-01-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>一种直接利用原始音频的语音转换系统，可实现 zero-shot 语音转换。</p>
+<span id="more"></span>
+<h2 id="引言"><a class="markdownIt-Anchor" href="#引言"></a> 引言</h2>
+<p>论文链接 <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2106.00992">https://arxiv.org/abs/2106.00992</a></p>
+<p>代码连接 <a target="_blank" rel="noopener" href="https://github.com/sony/ai-research-code">https://github.com/sony/ai-research-code</a></p>
+<h3 id="模型优缺点"><a class="markdownIt-Anchor" href="#模型优缺点"></a> 模型优缺点：</h3>
+<ul>
+<li>
+<p>模型训练是贼慢，卡少的低端玩家直接劝退。我觉着主要问题是数据增强及 Speaker encoder 模块导致的，同时 Mel-GAN 声码器建模能力相对较弱。</p>
+</li>
+<li>
+<p>模型 GPU 推理速度贼快，全是卷积操作，省去了特征提取过程。</p>
+</li>
+<li>
+<p>怎么能让它训练的更快，且效果更好呢？我这里想到的方法是不做 Zero-shot 这种太过于娱乐的产品，将 Speaker encoder 直接换成 One-hot 的 Speaker Embedding 特征（论文中 NVC-Net+ 已经这样做了）。同时，将 Generator 改成 HiFi-GAN 的生成器，判别器也改掉，增强判断能力。为了提升训练的速度，完全可以将模型提取到谱特征，然后利用谱特征建模。改完之后和 VITS 很像了，VITS 删除 Text Encoder 那个模块就和这个模型差不多了。</p>
+</li>
+</ul>
+<p>模型框架图：</p>
+<p><img src="/2022/12/11/NVC-Net/overview.jpg" alt="overview"></p>
+<h2 id="代码"><a class="markdownIt-Anchor" href="#代码"></a> 代码</h2>
+<h3 id="content-encoder"><a class="markdownIt-Anchor" href="#content-encoder"></a> Content Encoder</h3>
+<p>主要过程就是下采样过程，提取音频中的 content 信息。<br>
+下采样模块主要为两个部分：第一个是膨胀卷积（不引入额外参数的前提下，可以任意扩大感受野，同时保证特征图的分辨率不变，这里引入了残差的概念，为了让网络可以更深）；第二个是正常的卷积（利用stride为2，2，8，8进行下采样，同时增加通道数）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">class Encoder(Module):</span><br><span class="line">    r&quot;&quot;&quot;Implementation of the content encoder.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        hp (HParams): Hyper-parameters.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        # n_residual_layers &#x3D; 4,</span><br><span class="line">        # ratios &#x3D; [8, 8, 2, 2],</span><br><span class="line">        for i in range(len(hp.ratios)):</span><br><span class="line">            setattr(self, f&quot;block_&#123;i&#125;&quot;, DownBlock(hp))  # 设置网络层</span><br><span class="line"></span><br><span class="line">    def call(self, x):</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        # print(x.shape)  # [1, 1, 54474] # 54474 是原始波形的长度</span><br><span class="line">        with nn.parameter_scope(&quot;first_layer&quot;):</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)  # 按照 reflect 的方式左右 pad  [1, 1, 54480]</span><br><span class="line">            x &#x3D; wn_conv(x, hp.ngf, (7,))           # 32个1维卷积  [1, 32, 54474]</span><br><span class="line"></span><br><span class="line">        for i, r in enumerate(reversed(hp.ratios)):</span><br><span class="line">            x &#x3D; getattr(self, f&quot;block_&#123;i&#125;&quot;)(x, r, 2**(i + 1))  # 提取网络层 (4个降采样层)</span><br><span class="line">            # 降采样维度为：(1, 64, 27237) --&gt; (1, 128, 13618) --&gt; (1, 256, 1702) --&gt; (1, 512, 212)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&quot;last_layer&quot;):</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, x.shape[1], (7,))</span><br><span class="line">            # (1, 512, 212)</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&quot;content&quot;):</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, hp.bottleneck_dim, (7,), with_bias&#x3D;False)  # (1, 4, 212)</span><br><span class="line">            # bottleneck_dim &#x3D; 4</span><br><span class="line">            x &#x3D; x &#x2F; F.sum(x**2 + 1e-12, axis&#x3D;1, keepdims&#x3D;True)**0.5</span><br><span class="line">            # 按照 通道进行了一次 归一化</span><br><span class="line"></span><br><span class="line">        return x</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">class DownBlock(Module):</span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        for i in range(hp.n_residual_layers):</span><br><span class="line">            setattr(self, f&quot;resblock_&#123;i&#125;&quot;, ResnetBlock())</span><br><span class="line"></span><br><span class="line">    def call(self, x, r, mult):</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        for i in range(hp.n_residual_layers):</span><br><span class="line">            x &#x3D; getattr(self, f&quot;resblock_&#123;i&#125;&quot;)(x, None, 3 ** i)</span><br><span class="line">        # 膨胀卷积 (膨胀率为 3 ** i)</span><br><span class="line">        with nn.parameter_scope(&quot;conv&quot;):</span><br><span class="line">            # ngf &#x3D; 32</span><br><span class="line">            # r &#x3D; [2, 2, 8, 8]</span><br><span class="line">            # mult &#x3D; 2 ** i</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            x &#x3D; wn_conv(</span><br><span class="line">                x, mult * hp.ngf, (r * 2,),</span><br><span class="line">                stride&#x3D;(r,), pad&#x3D;(r &#x2F;&#x2F; 2 + r % 2,),</span><br><span class="line">            )</span><br><span class="line">        # 按照 r 进行  扩大通道 32 --&gt; 64  ; 降采样 T</span><br><span class="line">        return x</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">class ResnetBlock(Module):</span><br><span class="line">    def call(self, x, spk_emb, dilation):</span><br><span class="line">        dim &#x3D; x.shape[1]</span><br><span class="line">        with nn.parameter_scope(&#39;shortcut&#39;):</span><br><span class="line">            s &#x3D; wn_conv(x, dim, (1,))  # 获得一个和 x 相同维度的向量（这里应该是残差，最后加到结果上）</span><br><span class="line">        with nn.parameter_scope(&#39;block&#39;):</span><br><span class="line">            b &#x3D; F.pad(x, (0, 0, dilation, dilation), &#39;reflect&#39;)</span><br><span class="line">            # 膨胀卷积卷积核计算公式（优点：不引入额外参数的前提下，可以任意扩大感受野，同时保证特征图的分辨率不变）</span><br><span class="line">            # out_dim &#x3D; (in_dim + 2 * padding - (kernel_size - 1) * dilation - 1) &#x2F; stride + 1</span><br><span class="line">            b &#x3D; wn_conv(b, 2 * dim, (3,), dilation&#x3D;(dilation,), name&#x3D;&#39;conv_1&#39;)</span><br><span class="line">            if spk_emb is not None:</span><br><span class="line">                b &#x3D; b + wn_conv(spk_emb, 2 * dim, (1,), name&#x3D;&quot;spk_emb&quot;)</span><br><span class="line">            b &#x3D; F.tanh(b[:, :dim, ...]) * F.sigmoid(b[:, dim:, ...])</span><br><span class="line">            b &#x3D; wn_conv(b, dim, (1,), dilation&#x3D;(dilation,), name&#x3D;&#39;conv_2&#39;)</span><br><span class="line">        return s + b</span><br></pre></td></tr></table></figure>
+<h3 id="generator"><a class="markdownIt-Anchor" href="#generator"></a> Generator</h3>
+<p>主要过程就是上采样过程，根据提取的 源 content 与目标 speaker 信息，得到目标音频。主要包括两个部分：第一个是<code>转置卷积</code>用于上采样，第二个是膨胀卷积（这里与Content Encoder中膨胀卷积结构一样，不过在膨胀卷积之后引入了 speaker 信息）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">class Decoder(Module):</span><br><span class="line">    r&quot;&quot;&quot;Implementation of the generator.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        hp (HParams): Hyper-parameters.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        for i in range(len(hp.ratios)):</span><br><span class="line">            setattr(self, f&quot;block_&#123;i&#125;&quot;, UpBlock(hp))</span><br><span class="line"></span><br><span class="line">    def call(self, x, spk_emb):</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        self.hop_length &#x3D; np.prod(hp.ratios)  # 256</span><br><span class="line">        mult &#x3D; int(2 ** len(hp.ratios))       # 16</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&quot;upsample&quot;):</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, mult * hp.ngf, (7,))</span><br><span class="line">            # [1, 512, 212]</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&quot;first_layer&quot;):</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, x.shape[1], (7,))</span><br><span class="line"></span><br><span class="line">        for i, r in enumerate(hp.ratios):</span><br><span class="line">            x &#x3D; getattr(self, f&quot;block_&#123;i&#125;&quot;)(x, spk_emb, r, mult &#x2F;&#x2F; (2**i))</span><br><span class="line">        # 上采样模块 (1, 256, 1696) -》 (1, 128, 13568) --》 (1, 64, 27136)  --》 (1, 32, 54272)</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&quot;waveform&quot;):</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 3, 3), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, 1, (7,))</span><br><span class="line">            x &#x3D; F.tanh(x)</span><br><span class="line">        # [1, 1, 54272]</span><br><span class="line">        return x</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">class UpBlock(Module):</span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        for i in range(hp.n_residual_layers):</span><br><span class="line">            setattr(self, f&quot;resblock_&#123;i&#125;&quot;, ResnetBlock())</span><br><span class="line"></span><br><span class="line">    def call(self, x, spk_emb, r, mult):</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        with nn.parameter_scope(&quot;deconv&quot;):</span><br><span class="line">            x &#x3D; F.gelu(x)</span><br><span class="line">            # print(x.shape)   # [1, 512, 212]</span><br><span class="line">            x &#x3D; wn_deconv(</span><br><span class="line">                x, mult * hp.ngf &#x2F;&#x2F; 2, (r * 2, ),</span><br><span class="line">                stride&#x3D;(r,), pad&#x3D;(r &#x2F;&#x2F; 2 + r % 2,),</span><br><span class="line">            )</span><br><span class="line">            # wn_deconv 转置卷积进行上采样, 转置卷积计算维度的公式为</span><br><span class="line">            # out_dim &#x3D; (in_dim - 1) * stride - 2 * padding + kernel_size</span><br><span class="line">            # [1, 256, 1696]</span><br><span class="line"></span><br><span class="line">        for i in range(hp.n_residual_layers):</span><br><span class="line">            x &#x3D; getattr(self, f&quot;resblock_&#123;i&#125;&quot;)(x, spk_emb, 3 ** i)</span><br><span class="line"></span><br><span class="line">        return x</span><br></pre></td></tr></table></figure>
+<h3 id="speaker-encoder"><a class="markdownIt-Anchor" href="#speaker-encoder"></a> Speaker Encoder</h3>
+<p>根据 mel 谱获得目标说话人特征</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">class Speaker(Module):</span><br><span class="line">    r&quot;&quot;&quot;Implementation of the speaker encoder.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        hp (HParams): Hyper-parameters.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        self.rng &#x3D; np.random.RandomState(hp.seed)</span><br><span class="line"></span><br><span class="line">    def call(self, x):</span><br><span class="line">        hp &#x3D; self.hp                    #</span><br><span class="line">        dim &#x3D; hp.n_speaker_embedding    # 128</span><br><span class="line">        kernel, pad &#x3D; (3,), (1,)</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&#39;melspectrogram&#39;):</span><br><span class="line">            # sr &#x3D; 22050</span><br><span class="line">            # 利用 mel spectrogram 构建 speaker embedding</span><br><span class="line">            out &#x3D; log_mel_spectrogram(x, hp.sr, 1024)  # [1, 80, 219]</span><br><span class="line">            if self.training:</span><br><span class="line">                out &#x3D; random_split(</span><br><span class="line">                    out, axis&#x3D;2, rng&#x3D;self.rng,</span><br><span class="line">                    lo&#x3D;hp.split_low,    # 30</span><br><span class="line">                    hi&#x3D;hp.split_hight,  # 45</span><br><span class="line">                )</span><br><span class="line">                # 为了增加模型的鲁棒性也是绝了！ 先将 mel spectrogram 切分成小块，然后再 cat 到一起</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&#39;init_conv&#39;):</span><br><span class="line">            out &#x3D; wn_conv(out, 32, kernel&#x3D;kernel, pad&#x3D;pad)  # [1, 32, 219]</span><br><span class="line"></span><br><span class="line">        # n_spk_layers &#x3D; 5</span><br><span class="line"></span><br><span class="line">        for i in range(hp.n_spk_layers):</span><br><span class="line">            dim_out &#x3D; min(out.shape[1] * 2, 512)</span><br><span class="line">            out &#x3D; res_block(</span><br><span class="line">                out, dim_out,</span><br><span class="line">                kernel&#x3D;kernel, pad&#x3D;pad,</span><br><span class="line">                scope&#x3D;f&#39;downsample_&#123;i&#125;&#39;,</span><br><span class="line">                training&#x3D;self.training</span><br><span class="line">            )</span><br><span class="line">        # 通过 卷积 和 avg_pool</span><br><span class="line">        # (1, 64, 109) --&gt; (1, 128, 54) --&gt; (1, 256, 27)  --&gt; (1, 512, 13) --&gt; (1, 512, 6)</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&#39;last_layer&#39;):</span><br><span class="line">            out &#x3D; F.average_pooling(out, kernel&#x3D;(1, out.shape[-1]))</span><br><span class="line">            out &#x3D; F.leaky_relu(out, 0.2)</span><br><span class="line">        # [1, 512, 1]</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(&#39;mean&#39;):</span><br><span class="line">            mu &#x3D; wn_conv(out, dim, kernel&#x3D;(1,))</span><br><span class="line">        # [1, 128, 1]</span><br><span class="line">        with nn.parameter_scope(&#39;logvar&#39;):</span><br><span class="line">            logvar &#x3D; wn_conv(out, dim, kernel&#x3D;(1,))</span><br><span class="line">        # [1, 128, 1]</span><br><span class="line">        return mu, logvar</span><br></pre></td></tr></table></figure>
+<h3 id="discriminator"><a class="markdownIt-Anchor" href="#discriminator"></a> Discriminator</h3>
+<p>类似与 MelGAN 的多尺度判别器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">class Discriminator(Module):</span><br><span class="line">    r&quot;&quot;&quot;Implementation of the multi-scale discriminator.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        hp (HParams): Hyper-parameters.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line">        for i in range(hp.num_D):</span><br><span class="line">            setattr(self, f&#39;dis_&#123;i&#125;&#39;, NLayerDiscriminator(hp))</span><br><span class="line"></span><br><span class="line">    def call(self, x, y):</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        results &#x3D; []</span><br><span class="line">        for i in range(hp.num_D):</span><br><span class="line">            # (8, 1, 32768)  # 输入第一个判别器的</span><br><span class="line">            results.append(getattr(self, f&#39;dis_&#123;i&#125;&#39;)(x, y))</span><br><span class="line">            x &#x3D; F.average_pooling(</span><br><span class="line">                x, (1, 4),</span><br><span class="line">                stride&#x3D;(1, 2),</span><br><span class="line">                pad&#x3D;(0, 1),</span><br><span class="line">                including_pad&#x3D;False</span><br><span class="line">            )</span><br><span class="line">            # (8, 1, 16384) # 输入第二个判别器的</span><br><span class="line">            # (8, 1, 8192)  # 输入第三个判别器的</span><br><span class="line">            # (8, 1, 4096)</span><br><span class="line">        return results</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">class NLayerDiscriminator(Module):</span><br><span class="line">    r&quot;&quot;&quot;A single discriminator.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        hp (HParams): Hyper-parameters.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">    def __init__(self, hp):</span><br><span class="line">        self.hp &#x3D; hp</span><br><span class="line"></span><br><span class="line">    def call(self, x, y):</span><br><span class="line">        # x: [1, 1, 32768] 原始波形</span><br><span class="line">        # y: [1, 1] x 对应的 label</span><br><span class="line">        hp &#x3D; self.hp</span><br><span class="line">        results &#x3D; []</span><br><span class="line">        with nn.parameter_scope(&#39;layer_0&#39;):</span><br><span class="line">            x &#x3D; F.pad(x, (0, 0, 7, 7), &#39;reflect&#39;)</span><br><span class="line">            x &#x3D; wn_conv(x, hp.ndf, (15,))</span><br><span class="line">            x &#x3D; F.leaky_relu(x, 0.2, inplace&#x3D;True)</span><br><span class="line">            # x: [1, 16, 32768]</span><br><span class="line">            results.append(x)</span><br><span class="line"></span><br><span class="line">        nf &#x3D; hp.ndf  # 16</span><br><span class="line">        stride &#x3D; hp.downsamp_factor  # 4</span><br><span class="line">        # n_layers_D: 4</span><br><span class="line">        for i in range(1, hp.n_layers_D + 1):</span><br><span class="line">            nf_prev &#x3D; nf</span><br><span class="line">            nf &#x3D; min(nf * stride, 1024)</span><br><span class="line">            with nn.parameter_scope(f&#39;layer_&#123;i&#125;&#39;):</span><br><span class="line">                x &#x3D; wn_conv(</span><br><span class="line">                    x, nf, (stride * 10 + 1,),</span><br><span class="line">                    stride&#x3D;(stride,),</span><br><span class="line">                    pad&#x3D;(stride * 5,),</span><br><span class="line">                    group&#x3D;nf_prev &#x2F;&#x2F; 4,</span><br><span class="line">                )</span><br><span class="line">                x &#x3D; F.leaky_relu(x, 0.2, inplace&#x3D;True)</span><br><span class="line">                # (1, 64, 8192)</span><br><span class="line">                # (1, 256, 2048)</span><br><span class="line">                # (1, 1024, 512)</span><br><span class="line">                # (1, 1024, 128)</span><br><span class="line">                results.append(x)</span><br><span class="line">        with nn.parameter_scope(f&#39;layer_&#123;hp.n_layers_D + 1&#125;&#39;):</span><br><span class="line">            nf &#x3D; min(nf * 2, 1024)</span><br><span class="line">            x &#x3D; wn_conv(x, nf, kernel&#x3D;(5,), pad&#x3D;(2,))</span><br><span class="line">            x &#x3D; F.leaky_relu(x, 0.2, inplace&#x3D;True)</span><br><span class="line">            # (1, 1024, 128)</span><br><span class="line">            results.append(x)</span><br><span class="line"></span><br><span class="line">        with nn.parameter_scope(f&#39;layer_&#123;hp.n_layers_D + 2&#125;&#39;):</span><br><span class="line">            x &#x3D; wn_conv(x, hp.n_speakers, kernel&#x3D;(3,), pad&#x3D;(1,))</span><br><span class="line">            # (1, 103:n_speakers, 128)</span><br><span class="line">            if y is not None:</span><br><span class="line">                # stack: 类似与 cat</span><br><span class="line">                idx &#x3D; F.stack(</span><br><span class="line">                    F.arange(0, hp.batch_size),</span><br><span class="line">                    y.reshape((hp.batch_size,))</span><br><span class="line">                )</span><br><span class="line">                # idx: [2, 8]</span><br><span class="line">                # x: [8, 103, 128]</span><br><span class="line">                x &#x3D; F.gather_nd(x, idx)</span><br><span class="line">                # 这里就是从 103 列中选出与 y_label 对应的那一列</span><br><span class="line">                # x: [8, 128]</span><br><span class="line">            results.append(x)</span><br><span class="line"></span><br><span class="line">        return results</span><br></pre></td></tr></table></figure>
+<h2 id="训练过程"><a class="markdownIt-Anchor" href="#训练过程"></a> 训练过程</h2>
+<h3 id="训练判别器的损失函数"><a class="markdownIt-Anchor" href="#训练判别器的损失函数"></a> 训练判别器的损失函数</h3>
+<ul>
+<li>对抗损失（交叉熵损失，真实语音为1，语音转换后的为0），使得判别器有更强的判别能力，能分辨是真实语音还是合成语音</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">def adversarial_loss(self, results, v):</span><br><span class="line">    r&quot;&quot;&quot;Returns the adversarial loss.</span><br><span class="line"></span><br><span class="line">    Args:</span><br><span class="line">        results (list): Output from discriminator.</span><br><span class="line">        v (int, optional): Target value. Real&#x3D;1.0, fake&#x3D;0.0.</span><br><span class="line"></span><br><span class="line">    Returns:</span><br><span class="line">        nn.Variable: Output variable.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    loss &#x3D; []</span><br><span class="line">    # 利用 三个判别器 输出计算交叉熵损失</span><br><span class="line">    # (8, 128)</span><br><span class="line">    # (8, 64)</span><br><span class="line">    # (8, 32)</span><br><span class="line">    for out in results:</span><br><span class="line">        t &#x3D; F.constant(v, shape&#x3D;out[-1].shape)</span><br><span class="line">        r &#x3D; F.sigmoid_cross_entropy(out[-1], t)</span><br><span class="line">        loss.append(F.mean(r))</span><br><span class="line">    return sum(loss)</span><br></pre></td></tr></table></figure>
+<h3 id="训练生成器的损失函数"><a class="markdownIt-Anchor" href="#训练生成器的损失函数"></a> 训练生成器的损失函数</h3>
+<ul>
+<li>
+<p>对抗损失（交叉熵损失，转换语音为1），使得生成器有更强的生成能力，能欺骗判别器</p>
+</li>
+<li>
+<p>内容保存损失（真实语音经过内容编码器得到的向量和转换语音经过内容编码器得到的向量计算MSE），这里是确保内容编码器确实是得到了内容</p>
+</li>
+<li>
+<p>kl散度损失：这里的做法其实有一些不太理解的，或者我认为这里是有问题的。既然文章说为了能从潜在空间采样，这里假设残差是服从标准正态分布的，但是为什么又直接把 speaker encoder 的后验和标准正态分布做 kl散度的约束呢？那假如这个约束力度过大，不是所有的人都得出一样的结果了吗？</p>
+</li>
+<li>
+<p>重构损失：一个是特征匹配损失，一个是频谱损失。</p>
+</li>
+</ul>
+<h3 id="训练过程中的数据增强"><a class="markdownIt-Anchor" href="#训练过程中的数据增强"></a> 训练过程中的数据增强</h3>
+<p>为了训练这个 GAN 模型，做了很多的数据增强的操作：</p>
+<ul>
+<li>当将信号的相位移动180度时，人类的听觉感知不会受到影响，因此，我们可以通过与-1相乘来翻转输入的符号以获得不同的输入</li>
+<li>随机振幅缩放</li>
+<li>少量的时间抖动</li>
+<li>首先，将输入信号分割为均匀随机长度为0.35 ~ 0.45秒的片段。然后，我们打乱这些片段的顺序，然后将它们连接起来，以随机顺序打乱的语言信息形成一个新的输入。我们观察到随机洗牌策略有助于避免内容信息泄露到说话人嵌入中，从而达到更好的解耦。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Voice-Conversion/" rel="tag"># Voice Conversion</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/11/23/AdaSpeech2/" rel="prev" title="AdaSpeech2">
+      <i class="fa fa-chevron-left"></i> AdaSpeech2
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/04/11/MQTTS/" rel="next" title="MQTTS">
+      MQTTS <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text"> 引言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">1.1.</span> <span class="nav-text"> 模型优缺点：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text"> 代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#content-encoder"><span class="nav-number">2.1.</span> <span class="nav-text"> Content Encoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#generator"><span class="nav-number">2.2.</span> <span class="nav-text"> Generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#speaker-encoder"><span class="nav-number">2.3.</span> <span class="nav-text"> Speaker Encoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#discriminator"><span class="nav-number">2.4.</span> <span class="nav-text"> Discriminator</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text"> 训练过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E5%88%A4%E5%88%AB%E5%99%A8%E7%9A%84%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="nav-number">3.1.</span> <span class="nav-text"> 训练判别器的损失函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E7%94%9F%E6%88%90%E5%99%A8%E7%9A%84%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="nav-number">3.2.</span> <span class="nav-text"> 训练生成器的损失函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E8%BF%87%E7%A8%8B%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A2%9E%E5%BC%BA"><span class="nav-number">3.3.</span> <span class="nav-text"> 训练过程中的数据增强</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文将详细解释 Wav 头文件，并展示利用 python 构建 Wav 头文件，配合 fastapi 将合成语音以&quot;audio&#x2F;wav&quot;格式进行传输。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Wav 文件头">
+<meta property="og:url" content="https://yuan1615.github.io/2022/09/02/WAV-File-Header/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="本文将详细解释 Wav 头文件，并展示利用 python 构建 Wav 头文件，配合 fastapi 将合成语音以&quot;audio&#x2F;wav&quot;格式进行传输。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-09-02T07:19:34.000Z">
+<meta property="article:modified_time" content="2022-09-02T08:56:04.254Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/09/02/WAV-File-Header/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Wav 文件头 | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/09/02/WAV-File-Header/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Wav 文件头
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-09-02 15:19:34 / Modified: 16:56:04" itemprop="dateCreated datePublished" datetime="2022-09-02T15:19:34+08:00">2022-09-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文将详细解释 Wav 头文件，并展示利用 python 构建 Wav 头文件，配合 fastapi 将合成语音以&quot;audio/wav&quot;格式进行传输。</p>
+<span id="more"></span>
+<p><a target="_blank" rel="noopener" href="https://docs.fileformat.com/audio/wav/">英文原文解释</a></p>
+<h2 id="wav-文件"><a class="markdownIt-Anchor" href="#wav-文件"></a> Wav 文件</h2>
+<p>WAV，即WAVE(Waveform Audio File Format, 波形音频文件格式)，是微软资源交换文件格式(RIFF)规范的一个子集，用于存储数字音频文件。这种格式不对比特流进行任何压缩，并以不同的采样率和比特率存储音频。它一直是音频cd的标准格式之一。Wave文件比MP3等新的音频文件格式更大，MP3使用有损压缩来减少文件大小，同时保持相同的音频质量。然而，WAV文件可以使用音频压缩管理器(ACM)编解码器压缩。有几个可用的api和应用程序可以将WAV文件转换为其他流行的音频文件格式。</p>
+<p>A WAVE file has a single “WAVE” chunk which consists of two sub-chunks:</p>
+<ul>
+<li>a “fmt” chunk - specifies the data format</li>
+<li>a “data” chunk - contains the actual sample data</li>
+</ul>
+<h2 id="wav-头文件"><a class="markdownIt-Anchor" href="#wav-头文件"></a> Wav 头文件</h2>
+<p>| 1byte=8bits</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">值</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1-4</td>
+<td style="text-align:center">“RIFF”</td>
+<td style="text-align:center">Marks the file as a riff file. Characters are each 1 byte long.</td>
+</tr>
+<tr>
+<td style="text-align:center">5-8</td>
+<td style="text-align:center">File size (integer)</td>
+<td style="text-align:center">Size of the overall file - 4 bytes, in bytes (32-bit integer). Typically, you’d fill this in after creation.</td>
+</tr>
+<tr>
+<td style="text-align:center">9-12</td>
+<td style="text-align:center">“WAVE”</td>
+<td style="text-align:center">File Type Header. For our purposes, it always equals “WAVE”.</td>
+</tr>
+<tr>
+<td style="text-align:center">13-16</td>
+<td style="text-align:center">“fmt &quot;</td>
+<td style="text-align:center">Format chunk marker. Includes trailing null</td>
+</tr>
+<tr>
+<td style="text-align:center">17-20</td>
+<td style="text-align:center">16</td>
+<td style="text-align:center">b’\x10\x00\x00\x00’, Length of format data as listed above</td>
+</tr>
+<tr>
+<td style="text-align:center">21-22</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">Type of format (1 is PCM) - 2 byte integer</td>
+</tr>
+<tr>
+<td style="text-align:center">23-24</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">Number of Channels - 2 byte integer</td>
+</tr>
+<tr>
+<td style="text-align:center">25-28</td>
+<td style="text-align:center">44100</td>
+<td style="text-align:center">Sample Rate - 32 byte integer. Common values are 44100 (CD), 48000 (DAT). Sample Rate = Number of Samples per second, or Hertz.</td>
+</tr>
+<tr>
+<td style="text-align:center">29-32</td>
+<td style="text-align:center">176400</td>
+<td style="text-align:center">(Sample Rate * BitsPerSample * Channels) / 8.</td>
+</tr>
+<tr>
+<td style="text-align:center">33-34</td>
+<td style="text-align:center">4</td>
+<td style="text-align:center">(BitsPerSample * Channels) / 8. [1 - 8 bit mono] [2 - 8 bit stereo/16 bit mono] [4 - 16 bit stereo]</td>
+</tr>
+<tr>
+<td style="text-align:center">35-36</td>
+<td style="text-align:center">16</td>
+<td style="text-align:center">Bits per sample</td>
+</tr>
+<tr>
+<td style="text-align:center">37-40</td>
+<td style="text-align:center">“data”</td>
+<td style="text-align:center">“data” chunk header. Marks the beginning of the data section.</td>
+</tr>
+<tr>
+<td style="text-align:center">41-44</td>
+<td style="text-align:center">File size (data)</td>
+<td style="text-align:center">Size of the data section.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="python-构建-wav-头文件"><a class="markdownIt-Anchor" href="#python-构建-wav-头文件"></a> python 构建 Wav 头文件</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def create_wav_header(audio_size: int, sampleRate:int, bits:int, channel:int):</span><br><span class="line">    header &#x3D; b&#39;&#39;</span><br><span class="line">    header +&#x3D; b&quot;RIFF&quot;</span><br><span class="line">    header +&#x3D; struct.pack(&#39;i&#39;, int(audio_size + 44 - 8))</span><br><span class="line">    header +&#x3D; b&quot;WAVEfmt &quot;</span><br><span class="line">    header +&#x3D; b&#39;\x10\x00\x00\x00&#39;</span><br><span class="line">    header +&#x3D; b&#39;\x01\x00&#39;</span><br><span class="line">    header +&#x3D; struct.pack(&#39;H&#39;, channel)</span><br><span class="line">    header +&#x3D; struct.pack(&#39;i&#39;, sampleRate)</span><br><span class="line">    header +&#x3D; struct.pack(&#39;i&#39;, int(sampleRate * bits &#x2F; 8))</span><br><span class="line">    header +&#x3D; struct.pack(&#39;H&#39;, int(channel * bits &#x2F; 8))</span><br><span class="line">    header +&#x3D; struct.pack(&#39;H&#39;, bits)</span><br><span class="line">    header +&#x3D; b&#39;data&#39;</span><br><span class="line">    header +&#x3D; struct.pack(&#39;i&#39;, audio_size)</span><br><span class="line">    return header</span><br></pre></td></tr></table></figure>
+<h2 id="python-fastapi-tts-后端"><a class="markdownIt-Anchor" href="#python-fastapi-tts-后端"></a> Python fastapi TTS 后端</h2>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">from fastapi import FastAPI, Response</span><br><span class="line">from synthesize_fastapi import *</span><br><span class="line"></span><br><span class="line">app &#x3D; FastAPI()</span><br><span class="line"></span><br><span class="line">@app.post(&quot;&#x2F;api&#x2F;tts&quot;)</span><br><span class="line">async def systhesize(text):</span><br><span class="line">    wav &#x3D; synthesize(text)  # 这里合成语音为 numpy.array(float32)格式, [-1, 1]</span><br><span class="line">    wav &#x3D;  wav * 32767</span><br><span class="line">    wav &#x3D; wav.astype(np.short)</span><br><span class="line">    hdr &#x3D; create_wav_header(wav.shape[0] * 2, int(sample_rate), 16, 1)</span><br><span class="line">    return Response(hdr + wav.tobytes(), media_type&#x3D;&quot;audio&#x2F;wav&quot;)</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/15/Text-to-Face/" rel="prev" title="文本语音驱动数字人表情口型竞赛">
+      <i class="fa fa-chevron-left"></i> 文本语音驱动数字人表情口型竞赛
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/09/21/AdaVocoder/" rel="next" title="AdaVocoder">
+      AdaVocoder <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#wav-%E6%96%87%E4%BB%B6"><span class="nav-number">1.</span> <span class="nav-text"> Wav 文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#wav-%E5%A4%B4%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text"> Wav 头文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#python-%E6%9E%84%E5%BB%BA-wav-%E5%A4%B4%E6%96%87%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text"> python 构建 Wav 头文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#python-fastapi-tts-%E5%90%8E%E7%AB%AF"><span class="nav-number">4.</span> <span class="nav-text"> Python fastapi TTS 后端</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

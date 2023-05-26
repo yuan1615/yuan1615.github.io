@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Low-Resource Mongolian Speech Synthesis Based on Automatic Prosody  Annotation 什么是低资源，在语音合成领域其实可以从两方面考虑：  语料数据少，即成对的&lt;text, audio&gt;少，表现就是整体录音时长短； 标注数据少，没有 text 与 audio 的对齐信息，没有 text 更多的标注信息，如韵律，情感">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Low-Resource Mongolian Speech Synthesis">
+<meta property="og:url" content="https://yuan1615.github.io/2022/10/21/MongolianTTS/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="Low-Resource Mongolian Speech Synthesis Based on Automatic Prosody  Annotation 什么是低资源，在语音合成领域其实可以从两方面考虑：  语料数据少，即成对的&lt;text, audio&gt;少，表现就是整体录音时长短； 标注数据少，没有 text 与 audio 的对齐信息，没有 text 更多的标注信息，如韵律，情感">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-10-21T01:54:46.000Z">
+<meta property="article:modified_time" content="2022-11-18T02:32:11.832Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="Mongolian TTS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/10/21/MongolianTTS/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Low-Resource Mongolian Speech Synthesis | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/10/21/MongolianTTS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Low-Resource Mongolian Speech Synthesis
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-10-21 09:54:46" itemprop="dateCreated datePublished" datetime="2022-10-21T09:54:46+08:00">2022-10-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-11-18 10:32:11" itemprop="dateModified" datetime="2022-11-18T10:32:11+08:00">2022-11-18</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Low-Resource Mongolian Speech Synthesis Based on Automatic Prosody  Annotation</p>
+<p>什么是低资源，在语音合成领域其实可以从两方面考虑：</p>
+<ul>
+<li>语料数据少，即成对的&lt;text, audio&gt;少，表现就是整体录音时长短；</li>
+<li>标注数据少，没有 text 与 audio 的对齐信息，没有 text 更多的标注信息，如韵律，情感等</li>
+</ul>
+<p>此文主要是参加“全国人机语音通讯学术会议(NCMMSC)”中的特别会议“面向蒙古语的低资源语音合成竞赛”，会议地址<a target="_blank" rel="noopener" href="http://mglip.com/challenge/NCMMSC2022-MTTSC/index.html">http://mglip.com/challenge/NCMMSC2022-MTTSC/index.html</a></p>
+<p>论文地址<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2211.09365">https://arxiv.org/abs/2211.09365</a></p>
+<span id="more"></span>
+<h2 id="some-sample"><a class="markdownIt-Anchor" href="#some-sample"></a> Some Sample</h2>
+<ul>
+<li>sun d’a d’E nige hei sigurqu abvgad liu xiyu’n caN-vn hwin_a-aqa jigan ergin arv-dagan tvljv iregsen xiywv d’uN-i twsqv bariba</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">GT</th>
+        <th align="center">Synthesis</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/mon_00020476.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/1.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+<ul>
+<li>bi yehe wswldal_a erhim bagvdal-vn jobxiyerel ugei-ber ende nige hwnwjv basa idesi vvgvsi neliyed abqv hereglebe</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">GT</th>
+        <th align="center">Synthesis</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/mon_00020483.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/2.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+<ul>
+<li>xirgagv hatagvjiltai gvqi jil temeqeged gwbi elesun-du xin_e hagvdasv-yi negegebe</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">GT</th>
+        <th align="center">Synthesis</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/mon_00020490.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/3.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+<ul>
+<li>geju swqimag dvvgarvgad bwrwgan vlam xirugusun nidu negegelgehu ugei qidgvlan ehilebe</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">GT</th>
+        <th align="center">Synthesis</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/mon_00020497.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/4.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+<ul>
+<li>sagsv dugureN nwm-i qirqu garhv qimege-yi swnwsvmagqa gindan-dv hamtv sagvgsad ni lEnin nwm jigeleju bain_a geju mededeg-yum</li>
+</ul>
+<table style="width: 100%;">
+    <thead>
+    <tr>
+        <th></th>
+        <th align="center">GT</th>
+        <th align="center">Synthesis</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row">wav</th>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/mon_00020504.wav" type="audio/wav"></audio></center></td>
+        <td><center><audio controls><source src="https://yuan1615.github.io/2022/10/21/MongolianTTS/5.wav" type="audio/wav"></audio></center></td>
+    </tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Mongolian-TTS/" rel="tag"># Mongolian TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/09/21/AdaVocoder/" rel="prev" title="AdaVocoder">
+      <i class="fa fa-chevron-left"></i> AdaVocoder
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/11/23/AdaSpeech2/" rel="next" title="AdaSpeech2">
+      AdaSpeech2 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#some-sample"><span class="nav-number">1.</span> <span class="nav-text"> Some Sample</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

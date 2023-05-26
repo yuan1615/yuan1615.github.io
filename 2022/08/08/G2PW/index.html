@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="摘要 G2PW：A ConditionalWeighted Softmax BERT for Polyphone Disambiguation in Mandarin 论文最亮点的地方是公开了基于 Mandarin Polyphone dataset with Bopomofo (MPB) 数据集训练的模型参数👍，MPB数据集共包含436个多音字，2610344条包含多音字的文本。  论文地址">
+<meta property="og:type" content="article">
+<meta property="og:title" content="G2PW">
+<meta property="og:url" content="https://yuan1615.github.io/2022/08/08/G2PW/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="摘要 G2PW：A ConditionalWeighted Softmax BERT for Polyphone Disambiguation in Mandarin 论文最亮点的地方是公开了基于 Mandarin Polyphone dataset with Bopomofo (MPB) 数据集训练的模型参数👍，MPB数据集共包含436个多音字，2610344条包含多音字的文本。  论文地址">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/08/G2PW/g2pw.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/08/G2PW/cond-weight.jpg">
+<meta property="article:published_time" content="2022-08-08T06:19:59.000Z">
+<meta property="article:modified_time" content="2022-08-10T08:26:49.537Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS Front-end">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2022/08/08/G2PW/g2pw.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/08/08/G2PW/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>G2PW | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/08/08/G2PW/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          G2PW
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-08 14:19:59" itemprop="dateCreated datePublished" datetime="2022-08-08T14:19:59+08:00">2022-08-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-08-10 16:26:49" itemprop="dateModified" datetime="2022-08-10T16:26:49+08:00">2022-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
+<p><strong>G2PW</strong>：A ConditionalWeighted Softmax BERT for Polyphone Disambiguation in Mandarin</p>
+<p>论文最亮点的地方是公开了基于 Mandarin Polyphone dataset with Bopomofo (MPB) 数据集训练的模型参数👍，MPB数据集共包含436个多音字，2610344条包含多音字的文本。</p>
+<ul>
+<li>论文地址：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2203.10430.pdf">https://arxiv.org/pdf/2203.10430.pdf</a></li>
+<li>代码地址：<a target="_blank" rel="noopener" href="https://github.com/GitYCC/g2pW">https://github.com/GitYCC/g2pW</a></li>
+<li>基于MPB训练的模型地址：<a target="_blank" rel="noopener" href="https://storage.googleapis.com/esun-ai/g2pW/G2PWModel-v1.zip">https://storage.googleapis.com/esun-ai/g2pW/G2PWModel-v1.zip</a></li>
+</ul>
+<span id="more"></span>
+<h2 id="主要框架"><a class="markdownIt-Anchor" href="#主要框架"></a> 主要框架</h2>
+<p>模型整体框架如下图：</p>
+<p><img src="/2022/08/08/G2PW/g2pw.jpg" alt="g2pw"></p>
+<p>conditional weight layer框架如下图：</p>
+<p><img src="/2022/08/08/G2PW/cond-weight.jpg" alt="cond-weight"></p>
+<p>主要问题如下：</p>
+<ul>
+<li>提供的预训练模型中的 <code>POLYPHONIC_CHARS.txt</code> 字典存在不足，会存在某些常见多音字不在多音字字典的现象，文末提供了改善方法</li>
+<li>最大的痛点是推断慢，这个是模型本身设计导致的，需要修改框架，改了框架我就没有这么多数据去训练了🤣。推断慢的原因是每个句子会出现很多多音字，如<code>欢迎拨打卫健委流调电话，小卫为您服务。</code>共有5个多音字，由于模型是按照每个字去训练的，则一句话需要反复推断5次，这里比较浪费时间和资源。</li>
+</ul>
+<h2 id="代码详解"><a class="markdownIt-Anchor" href="#代码详解"></a> 代码详解</h2>
+<p>从上面的框架图可以看出，相对来说很简单了。</p>
+<h3 id="数据处理"><a class="markdownIt-Anchor" href="#数据处理"></a> 数据处理</h3>
+<p>利用 Pytorch 构建 dataset，通过处理生成如下数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">outputs &#x3D; &#123;</span><br><span class="line">    &#39;input_ids&#39;: input_ids,</span><br><span class="line">    &#39;token_type_ids&#39;: token_type_ids,</span><br><span class="line">    &#39;attention_mask&#39;: attention_mask,</span><br><span class="line">    &#39;phoneme_mask&#39;: phoneme_mask, </span><br><span class="line">    &#39;char_id&#39;: char_id,                 </span><br><span class="line">    &#39;position_id&#39;: position_id,         </span><br><span class="line">    &#39;pos_id&#39; &#x3D; pos_id,                  </span><br><span class="line">    &#39;label_id&#39; &#x3D; label_id               </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">1. input_ids： 原始文本对应的id, 这个id是根据 bert 中 tokenizer 对应的</span><br><span class="line">2. token_type_ids：全为 0 的向量，这个是为 bert 提供的，全为0表示都是上半句</span><br><span class="line">3. attention_mask：全为 1 的向量，这个是为 bert 提供的，全为1表示不mask，所有词均参与计算</span><br><span class="line">4. phoneme_mask：多音字 hard mask, 向量长度为所有多音字可能发音的长度（CPP数据集为650），多音字对应字符可能发音的为1，其余位置为0</span><br><span class="line">5. char_ids：多音字 id，这个是多音字处于多音字序列的位置id，用于后续Embedding</span><br><span class="line">6. position_ids：多音字所在句子中的位置id，用于截取Bert输出的结果</span><br><span class="line">7. pos_ids：# 表示多音字对应的 POS，用于后续POS预测与利用POS帮助多音字预测</span><br><span class="line">8. label_ids：多音字的 GroundTruth</span><br></pre></td></tr></table></figure>
+<p>数据处理过程有如下需要注意的点：</p>
+<ul>
+<li>对原始 sentence 按照 window=32 进行了切分，即以多音字为中心，左右两边文本的长度最大为16，超过的则剪切。</li>
+<li>多音字POS是利用ckiptagger package 生成的，在训练阶段，利用了 Teacher Forcing的做法，即利用真实的POS去干预后续多音字预测。</li>
+</ul>
+<h3 id="核心模型"><a class="markdownIt-Anchor" href="#核心模型"></a> 核心模型</h3>
+<p>核心是 BERT 和 线性层，核心模型注意的点如下：</p>
+<ul>
+<li>BERT没有固定参数，一同进行训练；</li>
+<li>conditional weight layer：三个nn.Embedding，一个是多音字id，一个是多音字与POS结合的id，一个是bias，然后通过sigmoid获得每个个可能label_ids的概率，这个是soft，然后乘以最后的phoneme_mask（这个是hard mask）,得到最后的weight。</li>
+<li>POS用于多音字预测中引入了Teacher Forcing</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br></pre></td><td class="code"><pre><span class="line"># 这里是针对CPP参数简化的模型</span><br><span class="line"></span><br><span class="line">class G2PW(BertPreTrainedModel):</span><br><span class="line">    def __init__(self, model_source, labels, chars, pos_tags,</span><br><span class="line">                 use_conditional&#x3D;False, param_conditional&#x3D;None,</span><br><span class="line">                 use_focal&#x3D;False, param_focal&#x3D;None,</span><br><span class="line">                 use_pos&#x3D;False, param_pos&#x3D;None):</span><br><span class="line">        super().__init__(model_source)       # bert-base-chinese</span><br><span class="line"></span><br><span class="line">        self.num_labels &#x3D; len(labels)        # 650 个多音字 phoneme</span><br><span class="line">        self.num_chars &#x3D; len(chars)          # 623 个多音字符</span><br><span class="line">        self.num_pos_tags &#x3D; len(pos_tags)    # 11 个词性标签</span><br><span class="line"></span><br><span class="line">        self.bert &#x3D; BertModel(self.config)</span><br><span class="line"></span><br><span class="line">        self.classifier &#x3D; nn.Linear(self.config.hidden_size, self.num_labels)   # 768 ---&gt; 650</span><br><span class="line"></span><br><span class="line">        self.use_conditional &#x3D; use_conditional  # True</span><br><span class="line">        self.param_conditional &#x3D; param_conditional</span><br><span class="line">        if self.use_conditional:</span><br><span class="line">            conditional_affect_location &#x3D; self.param_conditional[&#39;affect_location&#39;]</span><br><span class="line">            target_size &#x3D; self.config.hidden_size if conditional_affect_location &#x3D;&#x3D; &#39;emb&#39; else self.num_labels</span><br><span class="line"></span><br><span class="line">            if self.param_conditional[&#39;bias&#39;]:  # True</span><br><span class="line">                self.descriptor_bias &#x3D; nn.Embedding(1, target_size)</span><br><span class="line">            if self.param_conditional[&#39;char-linear&#39;]:  # True</span><br><span class="line">                self.char_descriptor &#x3D; nn.Embedding(self.num_chars, target_size)</span><br><span class="line">            if self.param_conditional[&#39;char+pos-second&#39;]:  # True</span><br><span class="line">                self.second_order_descriptor &#x3D; nn.Embedding(self.num_chars * self.num_pos_tags, target_size)</span><br><span class="line">        </span><br><span class="line">        self.use_pos &#x3D; use_pos  # True</span><br><span class="line">        self.param_pos &#x3D; param_pos  #</span><br><span class="line">        # &#39;param_pos &#39;: &#123;</span><br><span class="line">        #     &#39;weight&#39;: 0.1,</span><br><span class="line">        #     &#39;pos_joint_training&#39;: True,</span><br><span class="line">        #     &#39;train_pos_path&#39;: &#39;train.pos&#39;,</span><br><span class="line">        #     &#39;valid_pos_path&#39;: &#39;dev.pos&#39;,</span><br><span class="line">        #     &#39;test_pos_path&#39;: &#39;test.pos&#39;</span><br><span class="line">        # &#125;</span><br><span class="line">        if self.use_pos and self.param_pos[&#39;pos_joint_training&#39;]:</span><br><span class="line">            self.pos_classifier &#x3D; nn.Linear(self.config.hidden_size, self.num_pos_tags)</span><br><span class="line">            # pos 分类</span><br><span class="line">    </span><br><span class="line">    def _weighted_softmax(self, logits, weights, eps):</span><br><span class="line">        max_logits, _ &#x3D; torch.max(logits, dim&#x3D;-1, keepdim&#x3D;True)</span><br><span class="line">        weighted_exp_logits &#x3D; torch.exp(logits - max_logits) * weights</span><br><span class="line">        # 这里线性层之后手写了 softmax 函数，为的就是 * weights</span><br><span class="line">        norm &#x3D; torch.sum(weighted_exp_logits, dim&#x3D;-1, keepdim&#x3D;True)</span><br><span class="line">        probs &#x3D; weighted_exp_logits &#x2F; norm</span><br><span class="line">        probs &#x3D; torch.clamp(probs, min&#x3D;eps, max&#x3D;1-eps)</span><br><span class="line">        return probs</span><br><span class="line">    </span><br><span class="line">    def forward(self, input_ids, token_type_ids, attention_mask, phoneme_mask, char_ids, position_ids, pos_ids&#x3D;None, label_ids&#x3D;None, eps&#x3D;1e-6):</span><br><span class="line">        transformers_major_ver &#x3D; int(transformers.__version__.split(&#39;.&#39;)[0])</span><br><span class="line">        # 4.6.1</span><br><span class="line">        if transformers_major_ver &gt;&#x3D; 4:</span><br><span class="line">            sequence_output, pooled_output &#x3D; self.bert(</span><br><span class="line">                input_ids,</span><br><span class="line">                token_type_ids&#x3D;token_type_ids,</span><br><span class="line">                attention_mask&#x3D;attention_mask,</span><br><span class="line">                return_dict&#x3D;False</span><br><span class="line">            )</span><br><span class="line">        else:</span><br><span class="line">            sequence_output, pooled_output &#x3D; self.bert(</span><br><span class="line">                input_ids,</span><br><span class="line">                token_type_ids&#x3D;token_type_ids,</span><br><span class="line">                attention_mask&#x3D;attention_mask</span><br><span class="line">            )</span><br><span class="line">        # sequence_output  [256, 34, 768]</span><br><span class="line">        batch_size &#x3D; input_ids.size(0)</span><br><span class="line">        orig_selected_hidden &#x3D; sequence_output[torch.arange(batch_size), position_ids]</span><br><span class="line">        selected_hidden &#x3D; orig_selected_hidden  # [256, 768]</span><br><span class="line">        if self.use_conditional:</span><br><span class="line">            if (self.param_conditional[&#39;char+pos-second&#39;]</span><br><span class="line">                    or self.param_conditional[&#39;char+pos-second_lowrank&#39;]</span><br><span class="line">                    or self.param_conditional[&#39;char+pos-second_fm&#39;]</span><br><span class="line">                    or self.param_conditional[&#39;pos-linear&#39;]</span><br><span class="line">                    or self.param_conditional[&#39;fix_mode&#39;] &#x3D;&#x3D; &#39;count_distr:char+pos&#39;):</span><br><span class="line">                pred_pos_ids &#x3D; pos_ids if self.training or not self.param_pos[&#39;pos_joint_training&#39;] \</span><br><span class="line">                    else self.pos_classifier(orig_selected_hidden).argmax(dim&#x3D;-1)  # teacher mode while training</span><br><span class="line">            # pred_pos_ids  [256]</span><br><span class="line">            affect_terms &#x3D; []</span><br><span class="line">            if self.param_conditional[&#39;bias&#39;]:  # True</span><br><span class="line">                bias_tensor &#x3D; self.descriptor_bias(torch.zeros_like(char_ids))</span><br><span class="line">                # print(char_ids.shape)      [256]</span><br><span class="line">                # print(bias_tensor.shape)   [256, 650]</span><br><span class="line">                affect_terms.append(bias_tensor)</span><br><span class="line">            if self.param_conditional[&#39;char-linear&#39;]:  # True</span><br><span class="line">                affect_terms.append(self.char_descriptor(char_ids))</span><br><span class="line">            if self.param_conditional[&#39;char+pos-second&#39;]:  # true</span><br><span class="line">                char_pos_ids &#x3D; self._get_char_pos_ids(char_ids, pred_pos_ids)</span><br><span class="line">                affect_terms.append(self.second_order_descriptor(char_pos_ids))</span><br><span class="line">            affect_hidden &#x3D; sum(affect_terms)</span><br><span class="line">            # softmax</span><br><span class="line">            phoneme_mask &#x3D; phoneme_mask * torch.sigmoid(affect_hidden)</span><br><span class="line"></span><br><span class="line">        logits &#x3D; self.classifier(selected_hidden)</span><br><span class="line">        probs &#x3D; self._weighted_softmax(logits, phoneme_mask, eps)</span><br><span class="line">        if label_ids is not None:</span><br><span class="line">            if self.use_focal:</span><br><span class="line">                loss_layer &#x3D; ModifiedFocalLoss(alpha&#x3D;self.param_focal[&#39;alpha&#39;], gamma&#x3D;self.param_focal[&#39;gamma&#39;])</span><br><span class="line">                loss &#x3D; loss_layer(probs, label_ids)</span><br><span class="line">            else:</span><br><span class="line">                loss_layer &#x3D; nn.NLLLoss()</span><br><span class="line">                log_probs &#x3D; torch.log(probs)</span><br><span class="line">                loss &#x3D; loss_layer(log_probs, label_ids)</span><br><span class="line">                # 最后多音字的损失</span><br><span class="line"></span><br><span class="line">            pos_logits &#x3D; None</span><br><span class="line">            if self.use_pos and pos_ids is not None and self.param_pos[&#39;pos_joint_training&#39;]:</span><br><span class="line">                pos_logits &#x3D; self.pos_classifier(orig_selected_hidden)</span><br><span class="line">                loss_fct &#x3D; nn.CrossEntropyLoss()  # nn.logSoftmax()和nn.NLLLoss()的结合</span><br><span class="line">                pos_loss &#x3D; loss_fct(pos_logits, pos_ids)</span><br><span class="line">                scaling &#x3D; self._get_pos_loss_scaling_when_using_focal(probs, label_ids) if self.use_focal else 1.</span><br><span class="line">                loss +&#x3D; self.param_pos[&#39;weight&#39;] * scaling * pos_loss</span><br><span class="line"></span><br><span class="line">            return probs, loss, pos_logits</span><br><span class="line">        else:</span><br><span class="line">            return probs                                </span><br></pre></td></tr></table></figure>
+<h3 id="推断代码"><a class="markdownIt-Anchor" href="#推断代码"></a> 推断代码</h3>
+<ul>
+<li>简易版推断</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">from poly import G2PWConverter</span><br><span class="line">conv &#x3D; G2PWConverter(model_dir&#x3D;&quot;saved_models&#x2F;CPP_BERT_M_DescWS-Sec-cLin-B_POSw01&#x2F;&quot;,</span><br><span class="line">                     style&#x3D;&#39;pinyin&#39;, enable_non_tradional_chinese&#x3D;False, use_cuda&#x3D;True)</span><br><span class="line">conv(&#39;你好&#39;)</span><br></pre></td></tr></table></figure>
+<h2 id="测试结果"><a class="markdownIt-Anchor" href="#测试结果"></a> 测试结果</h2>
+<ul>
+<li>推断代码中bopomofo多音字存在问题，这是字典设置的问题。</li>
+<li>推断过程运行较满，每句大概需要0.2s,直接用到TTS肯定不行，需要重写G2PWConverter提供的api</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">预测准确的案例：</span><br><span class="line">&#123;</span><br><span class="line">卫健委流调&lt;diao4, tiao2&gt;电话，为&lt;wei2, wei4&gt;您服务</span><br><span class="line">[[&#39;wei4&#39;, &#39;jian4&#39;, &#39;wei3&#39;, &#39;liu2&#39;, &#39;diao4&#39;, &#39;dian4&#39;, &#39;hua4&#39;, None, &#39;wei4&#39;, &#39;nin2&#39;, &#39;fu2&#39;, &#39;wu4&#39;]]</span><br><span class="line">&#125;</span><br><span class="line">预测失败的案例：(这里是bopomofo字典问题，后续需要改进)</span><br><span class="line">&#123;</span><br><span class="line">长&lt;chang2, zhang3&gt;期</span><br><span class="line">[[&#39;zhang3&#39;, &#39;qi1&#39;]]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="改进"><a class="markdownIt-Anchor" href="#改进"></a> 改进</h2>
+<ul>
+<li>完整版本推断</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br></pre></td><td class="code"><pre><span class="line">class G2PWConverter:</span><br><span class="line">    def __init__(self, model_dir&#x3D;&#39;G2PWModel&#x2F;&#39;, style&#x3D;&#39;bopomofo&#39;, model_source&#x3D;None, use_cuda&#x3D;False, num_workers&#x3D;None, batch_size&#x3D;None,</span><br><span class="line">                 turnoff_tqdm&#x3D;True, enable_non_tradional_chinese&#x3D;False):</span><br><span class="line">        if not os.path.exists(os.path.join(model_dir, &#39;best_accuracy.pth&#39;)):</span><br><span class="line">            download_model(model_dir)</span><br><span class="line">        self.model_dir &#x3D; model_dir</span><br><span class="line">        self.config &#x3D; load_config(os.path.join(model_dir, &#39;config.py&#39;), use_default&#x3D;True)</span><br><span class="line"></span><br><span class="line">        self.num_workers &#x3D; num_workers if num_workers else self.config.num_workers</span><br><span class="line">        self.batch_size &#x3D; batch_size if batch_size else self.config.batch_size</span><br><span class="line">        self.model_source &#x3D; model_source if model_source else self.config.model_source</span><br><span class="line">        self.turnoff_tqdm &#x3D; turnoff_tqdm</span><br><span class="line">        self.enable_opencc &#x3D; enable_non_tradional_chinese</span><br><span class="line"></span><br><span class="line">        self.device &#x3D; torch.device(&#39;cuda&#39; if use_cuda else &#39;cpu&#39;)</span><br><span class="line"></span><br><span class="line">        self.tokenizer &#x3D; BertTokenizer.from_pretrained(self.config.model_source)</span><br><span class="line"></span><br><span class="line">        polyphonic_chars_path &#x3D; os.path.join(model_dir, &#39;POLYPHONIC_CHARS.txt&#39;)</span><br><span class="line">        polyphonic_chars_path_s &#x3D; os.path.join(model_dir, &#39;POLYPHONIC_CHARS_S.txt&#39;)</span><br><span class="line">        monophonic_chars_path &#x3D; os.path.join(model_dir, &#39;MONOPHONIC_CHARS.txt&#39;)</span><br><span class="line">        self.polyphonic_chars &#x3D; [line.split(&#39;\t&#39;) for line in open(polyphonic_chars_path).read().strip().split(&#39;\n&#39;)]</span><br><span class="line">        self.polyphonic_chars_s &#x3D; [line.split(&#39;\t&#39;) for line in open(polyphonic_chars_path_s).read().strip().split(&#39;\n&#39;)]</span><br><span class="line">        # polyphonic_chars 8022</span><br><span class="line">        self.monophonic_chars &#x3D; [line.split(&#39;\t&#39;) for line in open(monophonic_chars_path).read().strip().split(&#39;\n&#39;)]</span><br><span class="line">        # monophonic_chars 9476</span><br><span class="line">        self.labels, self.char2phonemes &#x3D; get_char_phoneme_labels(self.polyphonic_chars) if self.config.use_char_phoneme else get_phoneme_labels(self.polyphonic_chars)</span><br><span class="line">        self.labels_s, self.char2phonemes_s &#x3D; get_char_phoneme_labels(</span><br><span class="line">            self.polyphonic_chars_s) if self.config.use_char_phoneme else get_phoneme_labels(self.polyphonic_chars_s)</span><br><span class="line">        # self.labels 1305, 共 1305个 bopomofo 发音</span><br><span class="line">        # char2phonemes，共 3582 个多因字符</span><br><span class="line">        self.chars &#x3D; sorted(list(self.char2phonemes.keys()))</span><br><span class="line">        self.pos_tags &#x3D; TextDataset.POS_TAGS</span><br><span class="line"></span><br><span class="line">        self.model &#x3D; G2PW.from_pretrained(</span><br><span class="line">            self.model_source,</span><br><span class="line">            labels&#x3D;self.labels,</span><br><span class="line">            chars&#x3D;self.chars,</span><br><span class="line">            pos_tags&#x3D;self.pos_tags,</span><br><span class="line">            use_conditional&#x3D;self.config.use_conditional,</span><br><span class="line">            param_conditional&#x3D;self.config.param_conditional,</span><br><span class="line">            use_focal&#x3D;self.config.use_focal,</span><br><span class="line">            param_focal&#x3D;self.config.param_focal,</span><br><span class="line">            use_pos&#x3D;self.config.use_pos,</span><br><span class="line">            param_pos&#x3D;self.config.param_pos</span><br><span class="line">        )</span><br><span class="line">        checkpoint &#x3D; os.path.join(model_dir, &#39;best_accuracy.pth&#39;)</span><br><span class="line">        self.model.load_state_dict(torch.load(checkpoint, map_location&#x3D;self.device))</span><br><span class="line">        self.model.to(self.device)</span><br><span class="line"></span><br><span class="line">        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),</span><br><span class="line">                               &#39;bopomofo_to_pinyin_wo_tune_dict.json&#39;), &#39;r&#39;) as fr:</span><br><span class="line">            self.bopomofo_convert_dict &#x3D; json.load(fr)</span><br><span class="line">            # 这里才有 424 个，这个 wo tune 到底是啥，这里应该就是 bopomofo 对应的 pinyin, 出错不应该是这里</span><br><span class="line">        self.style_convert_func &#x3D; &#123;</span><br><span class="line">            &#39;bopomofo&#39;: lambda x: x,</span><br><span class="line">            &#39;pinyin&#39;: self._convert_bopomofo_to_pinyin,</span><br><span class="line">        &#125;[style]</span><br><span class="line"></span><br><span class="line">        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),</span><br><span class="line">                               &#39;char_bopomofo_dict.json&#39;), &#39;r&#39;) as fr:</span><br><span class="line">            self.char_bopomofo_dict &#x3D; json.load(fr)</span><br><span class="line">            # char_bopomofo_dict: 汉字到bopomofo的字典，41497</span><br><span class="line"></span><br><span class="line">        if self.enable_opencc:</span><br><span class="line">            self.cc &#x3D; OpenCC(&#39;s2tw&#39;)  # 将中文简体转换为繁体，以台湾标准</span><br><span class="line"></span><br><span class="line">    def _convert_bopomofo_to_pinyin(self, bopomofo):</span><br><span class="line">        tone &#x3D; bopomofo[-1]</span><br><span class="line">        assert tone in &#39;12345&#39;</span><br><span class="line">        component &#x3D; self.bopomofo_convert_dict.get(bopomofo[:-1])</span><br><span class="line">        if component:</span><br><span class="line">            return component + tone</span><br><span class="line">        else:</span><br><span class="line">            print(f&#39;Warning: &quot;&#123;bopomofo&#125;&quot; cannot convert to pinyin&#39;)</span><br><span class="line">            return None</span><br><span class="line"></span><br><span class="line">    def __call__(self, sentences):</span><br><span class="line"></span><br><span class="line">        # s &#x3D; time.time()</span><br><span class="line">        if isinstance(sentences, str):</span><br><span class="line">            sentences &#x3D; [sentences]</span><br><span class="line">        # e &#x3D; time.time()</span><br><span class="line">        # print(&#39;第一步时间: %4f&#39; % (e - s))</span><br><span class="line">        # s &#x3D; time.time()</span><br><span class="line">        if self.enable_opencc:</span><br><span class="line">            translated_sentences &#x3D; []</span><br><span class="line">            for sent in sentences:</span><br><span class="line">                translated_sent &#x3D; self.cc.convert(sent)</span><br><span class="line">                assert len(translated_sent) &#x3D;&#x3D; len(sent)</span><br><span class="line">                translated_sentences.append(translated_sent)</span><br><span class="line">            sentences &#x3D; translated_sentences</span><br><span class="line">        # e &#x3D; time.time()</span><br><span class="line">        # print(&#39;第二步时间: %4f&#39; % (e - s))</span><br><span class="line">        # s &#x3D; time.time()</span><br><span class="line">        texts, query_ids, sent_ids, partial_results &#x3D; self._prepare_data(sentences)</span><br><span class="line">        # e &#x3D; time.time()</span><br><span class="line">        # print(&#39;第三步时间: %4f&#39; % (e - s))</span><br><span class="line">        # s &#x3D; time.time()</span><br><span class="line">        dataset &#x3D; TextDataset(self.tokenizer, self.labels, self.char2phonemes_s, self.chars, texts, query_ids,</span><br><span class="line">                              use_mask&#x3D;self.config.use_mask, use_char_phoneme&#x3D;self.config.use_char_phoneme,</span><br><span class="line">                              window_size&#x3D;self.config.window_size, for_train&#x3D;False)</span><br><span class="line"></span><br><span class="line">        dataloader &#x3D; DataLoader(</span><br><span class="line">            dataset&#x3D;dataset,</span><br><span class="line">            batch_size&#x3D;self.batch_size,</span><br><span class="line">            collate_fn&#x3D;dataset.create_mini_batch,</span><br><span class="line">            num_workers&#x3D;self.num_workers</span><br><span class="line">        )</span><br><span class="line">        # e &#x3D; time.time()</span><br><span class="line">        # print(&#39;time data: %4f&#39; % (e-s))</span><br><span class="line">        s &#x3D; time.time()</span><br><span class="line">        preds, confidences &#x3D; predict(self.model, dataloader, self.device, self.labels, turnoff_tqdm&#x3D;self.turnoff_tqdm)</span><br><span class="line">        e &#x3D; time.time()</span><br><span class="line">        print(&#39;time predict: %4f&#39; % (e-s))</span><br><span class="line">        if self.config.use_char_phoneme:</span><br><span class="line">            preds &#x3D; [pred.split(&#39; &#39;)[1] for pred in preds]</span><br><span class="line"></span><br><span class="line">        # s &#x3D; time.time()</span><br><span class="line">        results &#x3D; partial_results</span><br><span class="line">        for sent_id, query_id, pred in zip(sent_ids, query_ids, preds):</span><br><span class="line">            if self.model_dir &#x3D;&#x3D; &#39;G2PWModel&#x2F;&#39;:</span><br><span class="line">                results[sent_id][query_id] &#x3D; self.style_convert_func(pred)</span><br><span class="line">            else:</span><br><span class="line">                results[sent_id][query_id] &#x3D; pred</span><br><span class="line">        # e &#x3D; time.time()</span><br><span class="line">        # print(&#39;time results: %4f&#39; % (e - s))</span><br><span class="line">        return results</span><br><span class="line"></span><br><span class="line">    def _prepare_data(self, sentences):</span><br><span class="line">        # polyphonic_chars &#x3D; set(self.chars)  # 3582 个多音字 （这个多音字是缺失的，比如没有 “长”）</span><br><span class="line">        polyphonic_chars &#x3D; set(sorted(list(self.char2phonemes_s.keys())))  # 3582 个多音字 （这个多音字是缺失的，比如没有 “长”）</span><br><span class="line">        # 这里我新增了一个搜索 多音字字典，由于网络中用到了 char_id Embedding, 所以原始的不能修改，</span><br><span class="line">        # 我想在获取 char_id 中 利用随机数去预测</span><br><span class="line">        monophonic_chars_dict &#x3D; &#123;</span><br><span class="line">            char: phoneme for char, phoneme in self.monophonic_chars</span><br><span class="line">        &#125;</span><br><span class="line">        texts, query_ids, sent_ids, partial_results &#x3D; [], [], [], []</span><br><span class="line">        for sent_id, sent in enumerate(sentences):</span><br><span class="line">            partial_result &#x3D; [None] * len(sent)</span><br><span class="line">            for i, char in enumerate(sent):</span><br><span class="line">                if char in polyphonic_chars:</span><br><span class="line">                    texts.append(sent)</span><br><span class="line">                    query_ids.append(i)</span><br><span class="line">                    sent_ids.append(sent_id)</span><br><span class="line">                elif char in monophonic_chars_dict:</span><br><span class="line">                    # 先去 自己定义的 单音字字典进行匹配，还是没有 “长” 字</span><br><span class="line">                    partial_result[i] &#x3D;  self.style_convert_func(monophonic_chars_dict[char])</span><br><span class="line">                elif char in self.char_bopomofo_dict:</span><br><span class="line">                    # 再去最大的字典匹配（这里就是问题所在了，如果是多音字，默认仅仅取第1个定义的发音！）</span><br><span class="line">                    partial_result[i] &#x3D;  self.style_convert_func(self.char_bopomofo_dict[char][0])</span><br><span class="line">            partial_results.append(partial_result)</span><br><span class="line">        return texts, query_ids, sent_ids, partial_results</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这里主要修改的点是：</p>
+<ul>
+<li>重新加载了多音字字典，构建了<code>POLYPHONIC_CHARS_S.txt</code>用于检索sentences是否存在多音字，这里我们就可以新增多音字了，大大增加了可扩展性。</li>
+<li>由于模型中应用了 char_id 多音字ID进行了 Embedding 辅助训练，这里通过<code>POLYPHONIC_CHARS_S.txt</code>新增的多音字是没有对应的 char_id 的，我重写了 dataset部分，将没有对应的多音字 char_id 对应为0。这个没有太多道理，我觉得在模型部分 BERT 的重要程度要远远大于 char_id_embedding, 事实证明确实是的。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># dataset部分修改</span><br><span class="line">char_id &#x3D; self.chars.index(query_char) if query_char in self.chars else 0</span><br><span class="line">phoneme_mask &#x3D; [1 if i in self.char2phonemes[query_char] else 0 for i in range(len(self.labels))] \</span><br><span class="line">    if self.use_mask else [1] * len(self.labels)</span><br><span class="line"># 注意这里 char2phonemes 是根据新的多音字字典生成的。</span><br></pre></td></tr></table></figure>
+<p>还可能出现的问题是：</p>
+<ul>
+<li>新增了多音字，但是多音字的发音不在 phonemes 中。这种就很难该了，因为推断的 labels_num 已经由模型固定了，需要重新修改模型框架，再训练。</li>
+</ul>
+<h3 id="快速推理的思考"><a class="markdownIt-Anchor" href="#快速推理的思考"></a> 快速推理的思考</h3>
+<ul>
+<li>将一句中所有多音字都标识出来，一句话仅仅推断一次；</li>
+<li>将韵律预测模块进行拼接，减少一个模型。可以参考的论文<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2012.15404">Unified Mandarin TTS Front-end Based on Distilled BERT Model</a></li>
+<li>将基础模型 <code>bert-base-chinese</code> 换成更小更快的预训练语言模型，或者进行蒸馏。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS-Front-end/" rel="tag"># TTS Front-end</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/03/VITS/" rel="prev" title="VITS">
+      <i class="fa fa-chevron-left"></i> VITS
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/15/Text-to-Face/" rel="next" title="文本语音驱动数字人表情口型竞赛">
+      文本语音驱动数字人表情口型竞赛 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E6%A1%86%E6%9E%B6"><span class="nav-number">1.1.</span> <span class="nav-text"> 主要框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text"> 代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86"><span class="nav-number">1.2.1.</span> <span class="nav-text"> 数据处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.2.2.</span> <span class="nav-text"> 核心模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E6%96%AD%E4%BB%A3%E7%A0%81"><span class="nav-number">1.2.3.</span> <span class="nav-text"> 推断代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%BB%93%E6%9E%9C"><span class="nav-number">1.3.</span> <span class="nav-text"> 测试结果</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%B9%E8%BF%9B"><span class="nav-number">1.4.</span> <span class="nav-text"> 改进</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E6%8E%A8%E7%90%86%E7%9A%84%E6%80%9D%E8%80%83"><span class="nav-number">1.4.1.</span> <span class="nav-text"> 快速推理的思考</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

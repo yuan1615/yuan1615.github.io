@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="VITS 基于变分推断的端到端TTS模型（融合了声学模型与声码器）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VITS">
+<meta property="og:url" content="https://yuan1615.github.io/2022/08/03/VITS/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="VITS 基于变分推断的端到端TTS模型（融合了声学模型与声码器）">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/03/VITS/vits.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/03/VITS/WN.png">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/03/VITS/flow.png">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/03/VITS/sdp.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2022/08/03/VITS/mas.jpg">
+<meta property="article:published_time" content="2022-08-03T01:39:12.000Z">
+<meta property="article:modified_time" content="2022-09-16T08:37:46.716Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2022/08/03/VITS/vits.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/08/03/VITS/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>VITS | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/08/03/VITS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VITS
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-03 09:39:12" itemprop="dateCreated datePublished" datetime="2022-08-03T09:39:12+08:00">2022-08-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-09-16 16:37:46" itemprop="dateModified" datetime="2022-09-16T16:37:46+08:00">2022-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>VITS</strong> 基于变分推断的端到端TTS模型（融合了声学模型与声码器）</p>
+<span id="more"></span>
+<h2 id="paper"><a class="markdownIt-Anchor" href="#paper"></a> Paper</h2>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2106.06103">https://arxiv.org/abs/2106.06103</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/jaywalnut310/vits">https://github.com/jaywalnut310/vits</a></p>
+<p>VITS框架图如下：<br>
+<img src="/2022/08/03/VITS/vits.jpg" alt="vits"></p>
+<h2 id="实验"><a class="markdownIt-Anchor" href="#实验"></a> 实验</h2>
+<h3 id="中文场景韵律嵌入"><a class="markdownIt-Anchor" href="#中文场景韵律嵌入"></a> 中文场景（韵律嵌入）</h3>
+<p>利用中文标贝数据进行训练。</p>
+<ul>
+<li>祝大家中秋节快乐</li>
+</ul>
+<center><audio controls><source src="https://yuan1615.github.io/2022/08/03/VITS/vits1.wav" type="audio/wav"></audio></center>
+<ul>
+<li>我说点什么好呢？念一个绕口令吧。八百标兵奔北坡，炮兵并排北边跑，炮兵怕把标兵碰，标兵怕碰炮兵炮。八百标兵奔北坡，北坡八百炮兵炮，标兵怕碰炮兵炮，炮兵怕把标兵碰。八了百了标了兵了奔了北了坡，炮了兵了并了排了北了边了跑，炮了兵了怕了把了标了兵了碰，标了兵了怕了碰了炮了兵了炮。</li>
+</ul>
+<center><audio controls><source src="https://yuan1615.github.io/2022/08/03/VITS/vits2.wav" type="audio/wav"></audio></center>
+<h3 id="中英文混合场景"><a class="markdownIt-Anchor" href="#中英文混合场景"></a> 中英文混合场景</h3>
+<ul>
+<li>我刚刚去 Starbucks 买了杯 Vanilla Latte 和两块 Oatmeal Raisin Cookie, 搭配起来还蛮不错的。</li>
+</ul>
+<center><audio controls><source src="https://yuan1615.github.io/2022/08/03/VITS/vits-cs1.wav" type="audio/wav"></audio></center>
+<ul>
+<li>你多吃一点 means “Have some more.” 而慢慢吃 expresses politeness to someone when eating.</li>
+</ul>
+<center><audio controls><source src="https://yuan1615.github.io/2022/08/03/VITS/vits-cs2.wav" type="audio/wav"></audio></center>
+<ul>
+<li>这是一个【bad case】，共同成长。我可以读共同富裕，就是不能说共同成长.</li>
+</ul>
+<center><audio controls><source src="https://yuan1615.github.io/2022/08/03/VITS/vits-cs3.wav" type="audio/wav"></audio></center>
+<h2 id="模型及代码详解"><a class="markdownIt-Anchor" href="#模型及代码详解"></a> 模型及代码详解</h2>
+<h3 id="textencoder"><a class="markdownIt-Anchor" href="#textencoder"></a> TextEncoder</h3>
+<p>Text Encoder将 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>c</mi><mrow><mi>t</mi><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">c_{text}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">c</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mord mathit">t</span><span class="mord mathit">e</span><span class="mord mathit">x</span><span class="mord mathit">t</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span> 映射到 <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>h</mi><mrow><mi>t</mi><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">h_{text}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.69444em;"></span><span class="strut bottom" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">h</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mord mathit">t</span><span class="mord mathit">e</span><span class="mord mathit">x</span><span class="mord mathit">t</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span>，由6层transformer encoder构成，其中MultiHeadAttention中的n_heads为2，FFN中的kernel_size为3，这里需要注意的是 relative positional representation instead of absolute positional encoding.其中proj将<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>h</mi><mrow><mi>t</mi><mi>e</mi><mi>x</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">h_{text}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.69444em;"></span><span class="strut bottom" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">h</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mord mathit">t</span><span class="mord mathit">e</span><span class="mord mathit">x</span><span class="mord mathit">t</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span>映射到分布的均值与方差。</p>
+<p>Text Encoder 参数量为 6,353,664，这个会根据音素长度的不同略有差别。</p>
+<p>详细代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">class TextEncoder(nn.Module):</span><br><span class="line">  def __init__(self,</span><br><span class="line">      n_vocab,</span><br><span class="line">      out_channels,</span><br><span class="line">      hidden_channels,</span><br><span class="line">      filter_channels,</span><br><span class="line">      n_heads,</span><br><span class="line">      n_layers,</span><br><span class="line">      kernel_size,</span><br><span class="line">      p_dropout):</span><br><span class="line">    super().__init__()</span><br><span class="line">    self.n_vocab &#x3D; n_vocab</span><br><span class="line">    self.out_channels &#x3D; out_channels</span><br><span class="line">    self.hidden_channels &#x3D; hidden_channels</span><br><span class="line">    self.filter_channels &#x3D; filter_channels</span><br><span class="line">    self.n_heads &#x3D; n_heads</span><br><span class="line">    self.n_layers &#x3D; n_layers</span><br><span class="line">    self.kernel_size &#x3D; kernel_size</span><br><span class="line">    self.p_dropout &#x3D; p_dropout</span><br><span class="line"></span><br><span class="line">    self.emb &#x3D; nn.Embedding(n_vocab, hidden_channels)</span><br><span class="line">    nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)</span><br><span class="line"></span><br><span class="line">    self.prosody_emb &#x3D; nn.Embedding(5, hidden_channels)</span><br><span class="line">    nn.init.normal_(self.prosody_emb.weight, 0.0, hidden_channels**-0.5)</span><br><span class="line"></span><br><span class="line">    self.encoder &#x3D; attentions.Encoder(</span><br><span class="line">      hidden_channels,</span><br><span class="line">      filter_channels,</span><br><span class="line">      n_heads,</span><br><span class="line">      n_layers,</span><br><span class="line">      kernel_size,</span><br><span class="line">      p_dropout)</span><br><span class="line">    self.proj &#x3D; nn.Conv1d(hidden_channels, out_channels * 2, 1)</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_lengths, prosody):</span><br><span class="line">    # print(x.shape)          # [8, 101],</span><br><span class="line">    # print(x_lengths.shape)  # [8]</span><br><span class="line">    # print(prosody.shape)    # [8, 101],</span><br><span class="line"></span><br><span class="line">    x &#x3D; self.emb(x) * math.sqrt(self.hidden_channels)  # [b, t, h]</span><br><span class="line">    prosody &#x3D; self.prosody_emb(prosody) * math.sqrt(self.hidden_channels)</span><br><span class="line">    x &#x3D; x + prosody</span><br><span class="line">    x &#x3D; torch.transpose(x, 1, -1)  # [b, h, t]</span><br><span class="line">    x_mask &#x3D; torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)</span><br><span class="line">    # print(x_mask.shape)          # [8, 1, 101]</span><br><span class="line">    x &#x3D; self.encoder(x * x_mask, x_mask)</span><br><span class="line">    stats &#x3D; self.proj(x) * x_mask</span><br><span class="line"></span><br><span class="line">    m, logs &#x3D; torch.split(stats, self.out_channels, dim&#x3D;1)  # 获得 PRIOR 的 均值与方差</span><br><span class="line">    return x, m, logs, x_mask</span><br></pre></td></tr></table></figure>
+<h3 id="posteriorencoder"><a class="markdownIt-Anchor" href="#posteriorencoder"></a> PosteriorEncoder</h3>
+<p>主要的作用是将线性谱映射到分布的均值与方差，主要由non-causal WaveNet residual blocks组成，A WaveNet residual block consists of layers of dilated convolutions with a gated activation unit and skip connection.</p>
+<p>为什么是<code>线性谱</code>，而不是<code>mel谱</code>。作者的回复是：In our problem setting, we aim to provide more high-resolution information for the posterior encoder. We, therefore, use the linear-scale spectrogram of target speech <span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>x</mi><mrow><mi>l</mi><mi>i</mi><mi>n</mi></mrow></msub></mrow><annotation encoding="application/x-tex">x_{lin}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="strut" style="height:0.43056em;"></span><span class="strut bottom" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="base textstyle uncramped"><span class="mord"><span class="mord mathit">x</span><span class="vlist"><span style="top:0.15em;margin-right:0.05em;margin-left:0em;"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span><span class="reset-textstyle scriptstyle cramped"><span class="mord scriptstyle cramped"><span class="mord mathit" style="margin-right:0.01968em;">l</span><span class="mord mathit">i</span><span class="mord mathit">n</span></span></span></span><span class="baseline-fix"><span class="fontsize-ensurer reset-size5 size5"><span style="font-size:0em;">​</span></span>​</span></span></span></span></span></span> as input rather than the mel-spectrogram.</p>
+<ul>
+<li>pre：将513维利用卷积核为1的1维卷积映射到192维度</li>
+<li>enc：WaveNet模块，这里dilation_rate为1<br>
+WaveNet模块流程图如下：<br>
+<img src="/2022/08/03/VITS/WN.png" alt="WN"></li>
+</ul>
+<p>WaveNet模块代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">class WN(torch.nn.Module):</span><br><span class="line">  def __init__(self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels&#x3D;0, p_dropout&#x3D;0):</span><br><span class="line">    super(WN, self).__init__()</span><br><span class="line">    assert(kernel_size % 2 &#x3D;&#x3D; 1)</span><br><span class="line">    self.hidden_channels &#x3D;hidden_channels</span><br><span class="line">    self.kernel_size &#x3D; kernel_size,</span><br><span class="line">    self.dilation_rate &#x3D; dilation_rate</span><br><span class="line">    self.n_layers &#x3D; n_layers</span><br><span class="line">    self.gin_channels &#x3D; gin_channels</span><br><span class="line">    self.p_dropout &#x3D; p_dropout</span><br><span class="line"></span><br><span class="line">    self.in_layers &#x3D; torch.nn.ModuleList()</span><br><span class="line">    self.res_skip_layers &#x3D; torch.nn.ModuleList()</span><br><span class="line">    self.drop &#x3D; nn.Dropout(p_dropout)</span><br><span class="line"></span><br><span class="line">    if gin_channels !&#x3D; 0:</span><br><span class="line">      cond_layer &#x3D; torch.nn.Conv1d(gin_channels, 2*hidden_channels*n_layers, 1)</span><br><span class="line">      self.cond_layer &#x3D; torch.nn.utils.weight_norm(cond_layer, name&#x3D;&#39;weight&#39;)</span><br><span class="line"></span><br><span class="line">    for i in range(n_layers):</span><br><span class="line">      dilation &#x3D; dilation_rate ** i</span><br><span class="line">      padding &#x3D; int((kernel_size * dilation - dilation) &#x2F; 2)</span><br><span class="line">      in_layer &#x3D; torch.nn.Conv1d(hidden_channels, 2*hidden_channels, kernel_size,</span><br><span class="line">                                 dilation&#x3D;dilation, padding&#x3D;padding)</span><br><span class="line">      in_layer &#x3D; torch.nn.utils.weight_norm(in_layer, name&#x3D;&#39;weight&#39;)</span><br><span class="line">      self.in_layers.append(in_layer)</span><br><span class="line"></span><br><span class="line">      # last one is not necessary</span><br><span class="line">      if i &lt; n_layers - 1:</span><br><span class="line">        res_skip_channels &#x3D; 2 * hidden_channels</span><br><span class="line">      else:</span><br><span class="line">        res_skip_channels &#x3D; hidden_channels</span><br><span class="line"></span><br><span class="line">      res_skip_layer &#x3D; torch.nn.Conv1d(hidden_channels, res_skip_channels, 1)</span><br><span class="line">      res_skip_layer &#x3D; torch.nn.utils.weight_norm(res_skip_layer, name&#x3D;&#39;weight&#39;)</span><br><span class="line">      self.res_skip_layers.append(res_skip_layer)</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_mask, g&#x3D;None, **kwargs):</span><br><span class="line">    output &#x3D; torch.zeros_like(x)</span><br><span class="line">    n_channels_tensor &#x3D; torch.IntTensor([self.hidden_channels])  # tensor([192], dtype&#x3D;torch.int32)</span><br><span class="line"></span><br><span class="line">    if g is not None:</span><br><span class="line">      g &#x3D; self.cond_layer(g)</span><br><span class="line"></span><br><span class="line">    for i in range(self.n_layers):</span><br><span class="line">      x_in &#x3D; self.in_layers[i](x)</span><br><span class="line">      if g is not None:</span><br><span class="line">        cond_offset &#x3D; i * 2 * self.hidden_channels</span><br><span class="line">        g_l &#x3D; g[:,cond_offset:cond_offset+2*self.hidden_channels,:]</span><br><span class="line">      else:</span><br><span class="line">        g_l &#x3D; torch.zeros_like(x_in)</span><br><span class="line"></span><br><span class="line">      acts &#x3D; commons.fused_add_tanh_sigmoid_multiply(</span><br><span class="line">          x_in,</span><br><span class="line">          g_l,</span><br><span class="line">          n_channels_tensor)</span><br><span class="line">      acts &#x3D; self.drop(acts)</span><br><span class="line"></span><br><span class="line">      res_skip_acts &#x3D; self.res_skip_layers[i](acts)</span><br><span class="line">      if i &lt; self.n_layers - 1:</span><br><span class="line">        res_acts &#x3D; res_skip_acts[:,:self.hidden_channels,:]</span><br><span class="line">        x &#x3D; (x + res_acts) * x_mask</span><br><span class="line">        output &#x3D; output + res_skip_acts[:,self.hidden_channels:,:]</span><br><span class="line">      else:</span><br><span class="line">        output &#x3D; output + res_skip_acts</span><br><span class="line">    return output * x_mask</span><br><span class="line"></span><br><span class="line">  def remove_weight_norm(self):</span><br><span class="line">    if self.gin_channels !&#x3D; 0:</span><br><span class="line">      torch.nn.utils.remove_weight_norm(self.cond_layer)</span><br><span class="line">    for l in self.in_layers:</span><br><span class="line">      torch.nn.utils.remove_weight_norm(l)</span><br><span class="line">    for l in self.res_skip_layers:</span><br><span class="line">     torch.nn.utils.remove_weight_norm(l)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li>proj：将192维度映射到192*2，划分分布的均值和方差</li>
+</ul>
+<p>PosteriorEncoder参数量为7,238,016.</p>
+<p>详细代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">class PosteriorEncoder(nn.Module):</span><br><span class="line">  def __init__(self,</span><br><span class="line">      in_channels,</span><br><span class="line">      out_channels,</span><br><span class="line">      hidden_channels,</span><br><span class="line">      kernel_size,</span><br><span class="line">      dilation_rate,</span><br><span class="line">      n_layers,</span><br><span class="line">      gin_channels&#x3D;0):</span><br><span class="line">    super().__init__()</span><br><span class="line">    self.in_channels &#x3D; in_channels          # 513</span><br><span class="line">    self.out_channels &#x3D; out_channels        # 192</span><br><span class="line">    self.hidden_channels &#x3D; hidden_channels  # 192</span><br><span class="line">    self.kernel_size &#x3D; kernel_size          # 5</span><br><span class="line">    self.dilation_rate &#x3D; dilation_rate      # 1</span><br><span class="line">    self.n_layers &#x3D; n_layers                # 16</span><br><span class="line">    self.gin_channels &#x3D; gin_channels        # 0</span><br><span class="line"></span><br><span class="line">    self.pre &#x3D; nn.Conv1d(in_channels, hidden_channels, 1)</span><br><span class="line">    self.enc &#x3D; modules.WN(hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels&#x3D;gin_channels)</span><br><span class="line">    self.proj &#x3D; nn.Conv1d(hidden_channels, out_channels * 2, 1)</span><br><span class="line">    # num_param &#x3D; sum(param.numel() for param in self.parameters())  # 参数量 7,238,016</span><br><span class="line">    # print(num_param)</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_lengths, g&#x3D;None):</span><br><span class="line">    x_mask &#x3D; torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)</span><br><span class="line">    x &#x3D; self.pre(x) * x_mask</span><br><span class="line">    # print(x.shape)                  # [8, 192, 654]</span><br><span class="line">    x &#x3D; self.enc(x, x_mask, g&#x3D;g)      #</span><br><span class="line">    # print(x.shape)                  # [8, 192, 654] 参数维度没有任何变化</span><br><span class="line">    stats &#x3D; self.proj(x) * x_mask     #</span><br><span class="line">    m, logs &#x3D; torch.split(stats, self.out_channels, dim&#x3D;1)</span><br><span class="line">    z &#x3D; (m + torch.randn_like(m) * torch.exp(logs)) * x_mask</span><br><span class="line">    return z, m, logs, x_mask</span><br></pre></td></tr></table></figure>
+<h3 id="generator"><a class="markdownIt-Anchor" href="#generator"></a> Generator</h3>
+<p>将 linear spectrograms 经过 PosteriorEncoder 得到的隐变量，上采样到 wav 波形。这里的结果与 hifi-gan 中的一摸一样，唯一不同的就是 hifi-gan 是将 mel-spectrograms 上采样。详细可参考<a href="https://yuan1615.github.io/2022/01/21/HiFi-GAN/">hifi-gan</a>那篇文章。</p>
+<h3 id="flow"><a class="markdownIt-Anchor" href="#flow"></a> <strong>flow</strong></h3>
+<p>为什么要加入 <code>flow</code> 呢？作者是这样回复的：We found that increasing the expressiveness of the prior distribution is important for generating realistic samples. 可以简单理解为将正态分布映射到一个更复杂的分布。</p>
+<p>flow模块总共的参数量为 7,102,080。</p>
+<p>ResidualCouplingBlock由ResidualCouplingLayer和Flip构成。<br>
+该模块流程图如下：<br>
+<img src="/2022/08/03/VITS/flow.png" alt="flow"></p>
+<p>详细代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">class ResidualCouplingBlock(nn.Module):</span><br><span class="line">  def __init__(self,</span><br><span class="line">      channels,</span><br><span class="line">      hidden_channels,</span><br><span class="line">      kernel_size,</span><br><span class="line">      dilation_rate,</span><br><span class="line">      n_layers,</span><br><span class="line">      n_flows&#x3D;4,</span><br><span class="line">      gin_channels&#x3D;0):</span><br><span class="line">    super().__init__()</span><br><span class="line">    self.channels &#x3D; channels                 # 192</span><br><span class="line">    self.hidden_channels &#x3D; hidden_channels   # 192</span><br><span class="line">    self.kernel_size &#x3D; kernel_size           # 5</span><br><span class="line">    self.dilation_rate &#x3D; dilation_rate       # 1</span><br><span class="line">    self.n_layers &#x3D; n_layers                 # 4</span><br><span class="line">    self.n_flows &#x3D; n_flows                   # 4</span><br><span class="line">    self.gin_channels &#x3D; gin_channels         # 0</span><br><span class="line"></span><br><span class="line">    self.flows &#x3D; nn.ModuleList()</span><br><span class="line">    for i in range(n_flows):</span><br><span class="line">      self.flows.append(modules.ResidualCouplingLayer(channels, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels&#x3D;gin_channels, mean_only&#x3D;True))</span><br><span class="line">      self.flows.append(modules.Flip())</span><br><span class="line">    # num_param &#x3D; sum(param.numel() for param in self.parameters())  # 7,102,080</span><br><span class="line">    # print(num_param)</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_mask, g&#x3D;None, reverse&#x3D;False):</span><br><span class="line">    if not reverse:</span><br><span class="line">      for flow in self.flows:</span><br><span class="line">        x, _ &#x3D; flow(x, x_mask, g&#x3D;g, reverse&#x3D;reverse)</span><br><span class="line">    else:</span><br><span class="line">      for flow in reversed(self.flows):</span><br><span class="line">        x &#x3D; flow(x, x_mask, g&#x3D;g, reverse&#x3D;reverse)</span><br><span class="line">    return x</span><br></pre></td></tr></table></figure>
+<p>ResidualCouplingLayer模块</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">class ResidualCouplingLayer(nn.Module):</span><br><span class="line">  def __init__(self,</span><br><span class="line">      channels,</span><br><span class="line">      hidden_channels,</span><br><span class="line">      kernel_size,</span><br><span class="line">      dilation_rate,</span><br><span class="line">      n_layers,</span><br><span class="line">      p_dropout&#x3D;0,</span><br><span class="line">      gin_channels&#x3D;0,</span><br><span class="line">      mean_only&#x3D;False):</span><br><span class="line">    assert channels % 2 &#x3D;&#x3D; 0, &quot;channels should be divisible by 2&quot;</span><br><span class="line">    super().__init__()</span><br><span class="line">    self.channels &#x3D; channels</span><br><span class="line">    self.hidden_channels &#x3D; hidden_channels</span><br><span class="line">    self.kernel_size &#x3D; kernel_size</span><br><span class="line">    self.dilation_rate &#x3D; dilation_rate</span><br><span class="line">    self.n_layers &#x3D; n_layers</span><br><span class="line">    self.half_channels &#x3D; channels &#x2F;&#x2F; 2</span><br><span class="line">    self.mean_only &#x3D; mean_only</span><br><span class="line"></span><br><span class="line">    self.pre &#x3D; nn.Conv1d(self.half_channels, hidden_channels, 1)</span><br><span class="line">    self.enc &#x3D; WN(hidden_channels, kernel_size, dilation_rate, n_layers, p_dropout&#x3D;p_dropout, gin_channels&#x3D;gin_channels)</span><br><span class="line">    self.post &#x3D; nn.Conv1d(hidden_channels, self.half_channels * (2 - mean_only), 1)</span><br><span class="line">    self.post.weight.data.zero_()</span><br><span class="line">    self.post.bias.data.zero_()</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_mask, g&#x3D;None, reverse&#x3D;False):</span><br><span class="line">    x0, x1 &#x3D; torch.split(x, [self.half_channels]*2, 1)</span><br><span class="line">    # print(x0.shape)  [8, 96, 654]</span><br><span class="line">    # print(x1.shape)  [8, 96, 654]</span><br><span class="line">    # 首先将 line_spec 进行对半切分</span><br><span class="line">    h &#x3D; self.pre(x0) * x_mask        # 96 --&gt; 192</span><br><span class="line">    h &#x3D; self.enc(h, x_mask, g&#x3D;g)     # WN 模块 192 --&gt; 192</span><br><span class="line">    stats &#x3D; self.post(h) * x_mask    # 192 --&gt; 96 (mean_only &#x3D; True)</span><br><span class="line">    if not self.mean_only:</span><br><span class="line">      m, logs &#x3D; torch.split(stats, [self.half_channels]*2, 1)</span><br><span class="line">    else:</span><br><span class="line">      m &#x3D; stats</span><br><span class="line">      logs &#x3D; torch.zeros_like(m)</span><br><span class="line"></span><br><span class="line">    if not reverse:</span><br><span class="line">      x1 &#x3D; m + x1 * torch.exp(logs) * x_mask</span><br><span class="line">      x &#x3D; torch.cat([x0, x1], 1)</span><br><span class="line">      logdet &#x3D; torch.sum(logs, [1,2])</span><br><span class="line">      return x, logdet</span><br><span class="line">    else:</span><br><span class="line">      x1 &#x3D; (x1 - m) * torch.exp(-logs) * x_mask</span><br><span class="line">      x &#x3D; torch.cat([x0, x1], 1)</span><br><span class="line">      return x</span><br></pre></td></tr></table></figure>
+<h3 id="stochastic-duration-predictor"><a class="markdownIt-Anchor" href="#stochastic-duration-predictor"></a> Stochastic Duration Predictor</h3>
+<p>为啥引入这个模块呢？</p>
+<p>为了更好的提高语音合成的表现力，解决 one to many maping 的问题。</p>
+<p>主要包括两个部分：</p>
+<ul>
+<li>stack residual blocks with dilated and<br>
+depth-separable convolutional layers，同时用到了<code>残差</code>、<code>分组</code>、<code>膨胀</code>。</li>
+<li>neural spline flows</li>
+</ul>
+<p><img src="/2022/08/03/VITS/sdp.jpg" alt="sdp"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">class StochasticDurationPredictor(nn.Module):</span><br><span class="line">  def __init__(self, in_channels, filter_channels, kernel_size, p_dropout, n_flows&#x3D;4, gin_channels&#x3D;0):</span><br><span class="line">    super().__init__()</span><br><span class="line">    filter_channels &#x3D; in_channels # it needs to be removed from future version.</span><br><span class="line">    self.in_channels &#x3D; in_channels              # 192</span><br><span class="line">    self.filter_channels &#x3D; filter_channels</span><br><span class="line">    self.kernel_size &#x3D; kernel_size              # 3</span><br><span class="line">    self.p_dropout &#x3D; p_dropout                  # 0.5</span><br><span class="line">    self.n_flows &#x3D; n_flows                      # 4</span><br><span class="line">    self.gin_channels &#x3D; gin_channels</span><br><span class="line"></span><br><span class="line">    self.log_flow &#x3D; modules.Log()</span><br><span class="line">    self.flows &#x3D; nn.ModuleList()</span><br><span class="line">    self.flows.append(modules.ElementwiseAffine(2))</span><br><span class="line">    for i in range(n_flows):</span><br><span class="line">      self.flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers&#x3D;3))</span><br><span class="line">      self.flows.append(modules.Flip())</span><br><span class="line"></span><br><span class="line">    self.post_pre &#x3D; nn.Conv1d(1, filter_channels, 1)</span><br><span class="line">    self.post_proj &#x3D; nn.Conv1d(filter_channels, filter_channels, 1)</span><br><span class="line">    self.post_convs &#x3D; modules.DDSConv(filter_channels, kernel_size, n_layers&#x3D;3, p_dropout&#x3D;p_dropout)</span><br><span class="line">    self.post_flows &#x3D; nn.ModuleList()</span><br><span class="line">    self.post_flows.append(modules.ElementwiseAffine(2))</span><br><span class="line">    for i in range(4):</span><br><span class="line">      self.post_flows.append(modules.ConvFlow(2, filter_channels, kernel_size, n_layers&#x3D;3))</span><br><span class="line">      self.post_flows.append(modules.Flip())</span><br><span class="line"></span><br><span class="line">    self.pre &#x3D; nn.Conv1d(in_channels, filter_channels, 1)</span><br><span class="line">    self.proj &#x3D; nn.Conv1d(filter_channels, filter_channels, 1)</span><br><span class="line">    self.convs &#x3D; modules.DDSConv(filter_channels, kernel_size, n_layers&#x3D;3, p_dropout&#x3D;p_dropout)</span><br><span class="line">    if gin_channels !&#x3D; 0:</span><br><span class="line">      self.cond &#x3D; nn.Conv1d(gin_channels, filter_channels, 1)</span><br><span class="line"></span><br><span class="line">  def forward(self, x, x_mask, w&#x3D;None, g&#x3D;None, reverse&#x3D;False, noise_scale&#x3D;1.0):</span><br><span class="line">    x &#x3D; torch.detach(x)</span><br><span class="line">    # 截断梯度，这里不会影响 Text Encoder 模块的参数更新</span><br><span class="line">    x &#x3D; self.pre(x)             # [8, 192, 101] [b, h, t]</span><br><span class="line">    if g is not None:</span><br><span class="line">      # 针对多说话人，这里也会不同，因为不同人说话的节奏韵律是不一样的</span><br><span class="line">      g &#x3D; torch.detach(g)</span><br><span class="line">      x &#x3D; x + self.cond(g)</span><br><span class="line">    x &#x3D; self.convs(x, x_mask)   # [8, 192, 101]</span><br><span class="line">    x &#x3D; self.proj(x) * x_mask   #</span><br><span class="line">    # x 是在处理 Text Encoder 的输出</span><br><span class="line"></span><br><span class="line">    if not reverse:</span><br><span class="line">      flows &#x3D; self.flows</span><br><span class="line">      assert w is not None</span><br><span class="line">      # w 是在处理 duration</span><br><span class="line">      logdet_tot_q &#x3D; 0 </span><br><span class="line">      h_w &#x3D; self.post_pre(w)               # [8, 192, 123]</span><br><span class="line">      h_w &#x3D; self.post_convs(h_w, x_mask)   #</span><br><span class="line">      h_w &#x3D; self.post_proj(h_w) * x_mask   #</span><br><span class="line">      e_q &#x3D; torch.randn(w.size(0), 2, w.size(2)).to(device&#x3D;x.device, dtype&#x3D;x.dtype) * x_mask  # [8, 2, 123]</span><br><span class="line">      # 正态分布</span><br><span class="line">      z_q &#x3D; e_q  # [8, 2, 123]</span><br><span class="line">      for flow in self.post_flows:</span><br><span class="line">        z_q, logdet_q &#x3D; flow(z_q, x_mask, g&#x3D;(x + h_w))</span><br><span class="line">        logdet_tot_q +&#x3D; logdet_q</span><br><span class="line">      # print(z_q.shape)     [8, 2, 123]</span><br><span class="line">      # print(logdet_tot_q)  [8]</span><br><span class="line">      z_u, z1 &#x3D; torch.split(z_q, [1, 1], 1)    # u 和 v</span><br><span class="line">      u &#x3D; torch.sigmoid(z_u) * x_mask</span><br><span class="line">      z0 &#x3D; (w - u) * x_mask</span><br><span class="line">      logdet_tot_q +&#x3D; torch.sum((F.logsigmoid(z_u) + F.logsigmoid(-z_u)) * x_mask, [1,2])</span><br><span class="line">      logq &#x3D; torch.sum(-0.5 * (math.log(2*math.pi) + (e_q**2)) * x_mask, [1,2]) - logdet_tot_q</span><br><span class="line"></span><br><span class="line">      logdet_tot &#x3D; 0</span><br><span class="line">      z0, logdet &#x3D; self.log_flow(z0, x_mask)</span><br><span class="line">      logdet_tot +&#x3D; logdet</span><br><span class="line">      z &#x3D; torch.cat([z0, z1], 1)</span><br><span class="line">      for flow in flows:</span><br><span class="line">        z, logdet &#x3D; flow(z, x_mask, g&#x3D;x, reverse&#x3D;reverse)</span><br><span class="line">        logdet_tot &#x3D; logdet_tot + logdet</span><br><span class="line">      nll &#x3D; torch.sum(0.5 * (math.log(2*math.pi) + (z**2)) * x_mask, [1,2]) - logdet_tot</span><br><span class="line">      return nll + logq # [b]</span><br><span class="line">    else:</span><br><span class="line">      flows &#x3D; list(reversed(self.flows))</span><br><span class="line">      flows &#x3D; flows[:-2] + [flows[-1]] # remove a useless vflow</span><br><span class="line">      z &#x3D; torch.randn(x.size(0), 2, x.size(2)).to(device&#x3D;x.device, dtype&#x3D;x.dtype) * noise_scale</span><br><span class="line">      for flow in flows:</span><br><span class="line">        z &#x3D; flow(z, x_mask, g&#x3D;x, reverse&#x3D;reverse)</span><br><span class="line">      z0, z1 &#x3D; torch.split(z, [1, 1], 1)</span><br><span class="line">      logw &#x3D; z0</span><br><span class="line">      return logw</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="monotonic-alignment-search"><a class="markdownIt-Anchor" href="#monotonic-alignment-search"></a> Monotonic Alignment Search</h3>
+<p>最早是Glow-TTS提出来的方法（和VITS是同一个作者），目的省去额外对齐的过程。</p>
+<ul>
+<li>计算似然矩阵</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">with torch.no_grad():</span><br><span class="line">  # negative cross-entropy</span><br><span class="line">  s_p_sq_r &#x3D; torch.exp(-2 * logs_p) # [b, d, t]</span><br><span class="line">  neg_cent1 &#x3D; torch.sum(-0.5 * math.log(2 * math.pi) - logs_p, [1], keepdim&#x3D;True) # [b, 1, t_s]</span><br><span class="line">  neg_cent2 &#x3D; torch.matmul(-0.5 * (z_p ** 2).transpose(1, 2), s_p_sq_r) # [b, t_t, d] x [b, d, t_s] &#x3D; [b, t_t, t_s]</span><br><span class="line">  neg_cent3 &#x3D; torch.matmul(z_p.transpose(1, 2), (m_p * s_p_sq_r)) # [b, t_t, d] x [b, d, t_s] &#x3D; [b, t_t, t_s]</span><br><span class="line">  neg_cent4 &#x3D; torch.sum(-0.5 * (m_p ** 2) * s_p_sq_r, [1], keepdim&#x3D;True) # [b, 1, t_s]</span><br><span class="line">  neg_cent &#x3D; neg_cent1 + neg_cent2 + neg_cent3 + neg_cent4</span><br></pre></td></tr></table></figure>
+<ul>
+<li>根据似然矩阵得到对齐路径（动态规划算法，可以参考DTW理解）</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">value &#x3D; np.load(&quot;&#x2F;home&#x2F;admin&#x2F;yuanxin&#x2F;Bil-vits&#x2F;attn.npy&quot;)  # 这个是保存的《似然矩阵》</span><br><span class="line">value &#x3D; value[0].T</span><br><span class="line"></span><br><span class="line">t_x, t_y &#x3D; value.shape</span><br><span class="line"></span><br><span class="line">path &#x3D; np.zeros([t_x, t_y])</span><br><span class="line"></span><br><span class="line">Q &#x3D; float(&#39;-inf&#39;) * np.ones_like(value)</span><br><span class="line"></span><br><span class="line">for y in range(t_y):</span><br><span class="line">    for x in range(max(0, t_x + y - t_y), min(t_x, y + 1)):</span><br><span class="line">        if y &#x3D;&#x3D; 0:</span><br><span class="line">            Q[x, 0] &#x3D; value[x, 0]</span><br><span class="line">        else:</span><br><span class="line">            if x &#x3D;&#x3D; 0:</span><br><span class="line">                v_prev &#x3D; float(&#39;-inf&#39;)</span><br><span class="line">            else:</span><br><span class="line">                v_prev &#x3D; Q[x-1, y-1]</span><br><span class="line">            v_cur &#x3D; Q[x, y-1]</span><br><span class="line">            Q[x, y] &#x3D; value[x, y] + max(v_prev, v_cur)</span><br><span class="line"></span><br><span class="line"># Backtrack from last observation</span><br><span class="line">index &#x3D; t_x - 1</span><br><span class="line">for y in range(t_y - 1, -1, -1):</span><br><span class="line">    path[index, y] &#x3D; 1</span><br><span class="line">    if index !&#x3D;0 and (index &#x3D;&#x3D; y or Q[index, y-1] &lt; Q[index-1, y-1]):</span><br><span class="line">        index &#x3D; index - 1</span><br><span class="line"></span><br><span class="line"># np.save(&quot;&#x2F;home&#x2F;admin&#x2F;yuanxin&#x2F;Bil-vits&#x2F;path.npy&quot;, path)</span><br></pre></td></tr></table></figure>
+<p>左图为似然矩阵，右图为对齐结果</p>
+<p><img src="/2022/08/03/VITS/mas.jpg" alt="mas"></p>
+<h3 id="切片训练"><a class="markdownIt-Anchor" href="#切片训练"></a> 切片训练</h3>
+<p>这里不是整个音频进行对抗训练的，而是进行了随机切片处理。hifi-gan也是这样的。segment_size=8192，大约是0.37秒。</p>
+<h3 id="对抗训练"><a class="markdownIt-Anchor" href="#对抗训练"></a> 对抗训练</h3>
+<p>与 hifi-gan 很类似，鉴别器还是多周期鉴别器（多周期和hifi-gan中一样） + 多尺度鉴别器（多尺度这里就用到了一个）。</p>
+<ul>
+<li>损失函数</li>
+</ul>
+<p>与 hifi-gan 不同的就是损失函数新增了<code>先验</code>和<code>后验</code>的KL散度</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):</span><br><span class="line">  &quot;&quot;&quot;</span><br><span class="line">  z_p, logs_q: [b, h, t_t]</span><br><span class="line">  m_p, logs_p: [b, h, t_t]</span><br><span class="line">  &quot;&quot;&quot;</span><br><span class="line">  z_p &#x3D; z_p.float()</span><br><span class="line">  logs_q &#x3D; logs_q.float()</span><br><span class="line">  m_p &#x3D; m_p.float()</span><br><span class="line">  logs_p &#x3D; logs_p.float()</span><br><span class="line">  z_mask &#x3D; z_mask.float()</span><br><span class="line"></span><br><span class="line">  kl &#x3D; logs_p - logs_q - 0.5</span><br><span class="line">  kl +&#x3D; 0.5 * ((z_p - m_p)**2) * torch.exp(-2. * logs_p)</span><br><span class="line">  kl &#x3D; torch.sum(kl * z_mask)</span><br><span class="line">  l &#x3D; kl &#x2F; torch.sum(z_mask)</span><br><span class="line">  return l</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/01/PortaSpeech/" rel="prev" title="PortaSpeech">
+      <i class="fa fa-chevron-left"></i> PortaSpeech
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/08/G2PW/" rel="next" title="G2PW">
+      G2PW <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#paper"><span class="nav-number">1.</span> <span class="nav-text"> Paper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C"><span class="nav-number">2.</span> <span class="nav-text"> 实验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E6%96%87%E5%9C%BA%E6%99%AF%E9%9F%B5%E5%BE%8B%E5%B5%8C%E5%85%A5"><span class="nav-number">2.1.</span> <span class="nav-text"> 中文场景（韵律嵌入）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E8%8B%B1%E6%96%87%E6%B7%B7%E5%90%88%E5%9C%BA%E6%99%AF"><span class="nav-number">2.2.</span> <span class="nav-text"> 中英文混合场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B%E5%8F%8A%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">3.</span> <span class="nav-text"> 模型及代码详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#textencoder"><span class="nav-number">3.1.</span> <span class="nav-text"> TextEncoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#posteriorencoder"><span class="nav-number">3.2.</span> <span class="nav-text"> PosteriorEncoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#generator"><span class="nav-number">3.3.</span> <span class="nav-text"> Generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flow"><span class="nav-number">3.4.</span> <span class="nav-text"> flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stochastic-duration-predictor"><span class="nav-number">3.5.</span> <span class="nav-text"> Stochastic Duration Predictor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#monotonic-alignment-search"><span class="nav-number">3.6.</span> <span class="nav-text"> Monotonic Alignment Search</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%87%E7%89%87%E8%AE%AD%E7%BB%83"><span class="nav-number">3.7.</span> <span class="nav-text"> 切片训练</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E6%8A%97%E8%AE%AD%E7%BB%83"><span class="nav-number">3.8.</span> <span class="nav-text"> 对抗训练</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

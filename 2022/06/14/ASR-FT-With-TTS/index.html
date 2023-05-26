@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="高度数据驱动的端到端ASR系统在应用到实际业务场景中往往识别特定行业名词的准确率不高，如muji外呼中“无印良品”这个名词经常会识别错误。传统混合ASR模型可以修改解码过程和语言模型（LM）即可以达到快速更新，从而可以较准确的识别特定行业专有名词。但是针对端到端ASR模型修改就比较麻烦了，本文整理并验证了利用TTS合成语音来增强ASR识别专有行业名词的准确率。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用TTS合成语音增强ASR识别专有行业名词的准确率">
+<meta property="og:url" content="https://yuan1615.github.io/2022/06/14/ASR-FT-With-TTS/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="高度数据驱动的端到端ASR系统在应用到实际业务场景中往往识别特定行业名词的准确率不高，如muji外呼中“无印良品”这个名词经常会识别错误。传统混合ASR模型可以修改解码过程和语言模型（LM）即可以达到快速更新，从而可以较准确的识别特定行业专有名词。但是针对端到端ASR模型修改就比较麻烦了，本文整理并验证了利用TTS合成语音来增强ASR识别专有行业名词的准确率。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-06-14T06:38:56.000Z">
+<meta property="article:modified_time" content="2022-06-14T08:53:53.606Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="ASR Fine-Tuning">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/06/14/ASR-FT-With-TTS/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>利用TTS合成语音增强ASR识别专有行业名词的准确率 | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/06/14/ASR-FT-With-TTS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          利用TTS合成语音增强ASR识别专有行业名词的准确率
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-06-14 14:38:56 / Modified: 16:53:53" itemprop="dateCreated datePublished" datetime="2022-06-14T14:38:56+08:00">2022-06-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Automatic-Speech-Recognition/" itemprop="url" rel="index"><span itemprop="name">Automatic Speech Recognition</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>高度数据驱动的端到端ASR系统在应用到实际业务场景中往往识别特定行业名词的准确率不高，如muji外呼中“无印良品”这个名词经常会识别错误。传统混合ASR模型可以修改解码过程和语言模型（LM）即可以达到快速更新，从而可以较准确的识别特定行业专有名词。但是针对端到端ASR模型修改就比较麻烦了，本文整理并验证了利用TTS合成语音来增强ASR识别专有行业名词的准确率。</p>
+<span id="more"></span>
+<h2 id="一-增强asr识别专有名词的可行方法"><a class="markdownIt-Anchor" href="#一-增强asr识别专有名词的可行方法"></a> 一、增强ASR识别专有名词的可行方法</h2>
+<ul>
+<li>简单粗暴的方法：</li>
+</ul>
+<ol>
+<li>标注部分业务数据集，可以利用迁移学习，也可以和通用数据一起训练；</li>
+<li>标注大量业务数据，从头训练模型（一般不太可能，也不建议）。</li>
+</ol>
+<ul>
+<li>结合传统hybrid模型（如WeNet2.0中利用了WFST解码）：</li>
+</ul>
+<ol>
+<li>在解码过程加入热词</li>
+<li>加入语言模型</li>
+</ol>
+<ul>
+<li>利用TTS合成语音进行迁移学习</li>
+</ul>
+<h2 id="二-利用tts合成语音迁移学习详解"><a class="markdownIt-Anchor" href="#二-利用tts合成语音迁移学习详解"></a> 二、利用TTS合成语音迁移学习详解</h2>
+<ol>
+<li>合成语音和真实语音一同训练</li>
+</ol>
+<p>对合成数据和真实数据一起微调可以防止模型忘记真实音频。有相关文献证实了，在不做任何正则化迁移学习中，真实语音占比70%，合成语音占比30%可以达到比较好的结果。</p>
+<p><strong>||实验结果||</strong>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">利用业务标注数据集（真实数据）进行迁移学习比利用TTS合成语音（数据增强）要好，这个也符合常识[1]。但是换成多说话人TTS，增加不同语速和音调的调整或许可能会更毕竟业务标注数据集结果。</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>迁移学习中冻结 Encoder 参数</li>
+</ol>
+<p>可以有效减少对原有模型的过调整，要比上述方法1提高了更多专有名词的识别率，同时也没有降低原有模型的识别率。</p>
+<ol start="3">
+<li>迁移学习中冻结 Encoder 参数，同时正则化Decoder参数</li>
+</ol>
+<p>这种方法识别专有名词的准确率会提升，但是并没有第二种方法提升的高。优点是可以能稳定保持原有模型的性能。</p>
+<p><strong>||总结以下||</strong>：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">需求不同，选择的方法也不同。比如我更在乎专有名词识别的准确率，可以接受原有模型准确率的下降。我就会更多选择第二种方法。当然，迁移学习用的合成数据的规模，迁移学习在什么时候停止等问题，也会严重影响到最终的结果。</span><br></pre></td></tr></table></figure>
+<h2 id="三-实际验证"><a class="markdownIt-Anchor" href="#三-实际验证"></a> 三、实际验证</h2>
+<p>以下是我针对业务数据进行的验证，利用espnet框架完成。</p>
+<ol>
+<li>利用 AISHELL3 训练的218多说话人 TTS，合成100*218句 “无印良品”，100是调整语速和音调的；</li>
+<li>利用 wenetspeech 作为基础模型进行 迁移学习。</li>
+</ol>
+<p>迁移学习后模型：（1000句，47句包含“无印良品”，正确45，准确率为95.7%）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">,-------------------------------------------------------------------.</span><br><span class="line">|                         hyp_test_muju.txt                         |</span><br><span class="line">|-------------------------------------------------------------------|</span><br><span class="line">| SPKR   | # Snt   # Chr  | Corr    Sub    Del    Ins    Err  S.Err |</span><br><span class="line">|--------+----------------+-----------------------------------------|</span><br><span class="line">| 202    |  1000   14919  | 92.4    6.6    1.0    0.5    8.2   51.0 |</span><br><span class="line">|&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;|</span><br><span class="line">| Sum&#x2F;Avg|  1000   14919  | 92.4    6.6    1.0    0.5    8.2   51.0 |</span><br><span class="line">|&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;|</span><br><span class="line">|  Mean  |1000.0  14919.0 | 92.4    6.6    1.0    0.5    8.2   51.0 |</span><br><span class="line">|  S.D.  |  0.0      0.0  |  0.0    0.0    0.0    0.0    0.0    0.0 |</span><br><span class="line">| Median |1000.0  14919.0 | 92.4    6.6    1.0    0.5    8.2   51.0 |</span><br><span class="line">&#96;-------------------------------------------------------------------&#39;</span><br></pre></td></tr></table></figure>
+<p>迁移学习前模型：（1000句，47句包含“无印良品”，正确13，准确率为27.7%）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">,-------------------------------------------------------------------.</span><br><span class="line">|                       old_hyp_test_muju.txt                       |</span><br><span class="line">|-------------------------------------------------------------------|</span><br><span class="line">| SPKR   | # Snt   # Chr  | Corr    Sub    Del    Ins    Err  S.Err |</span><br><span class="line">|--------+----------------+-----------------------------------------|</span><br><span class="line">| 202    |  1000   14919  | 93.7    5.4    0.9    0.7    7.0   44.9 |</span><br><span class="line">|&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;|</span><br><span class="line">| Sum&#x2F;Avg|  1000   14919  | 93.7    5.4    0.9    0.7    7.0   44.9 |</span><br><span class="line">|&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;|</span><br><span class="line">|  Mean  |1000.0  14919.0 | 93.7    5.4    0.9    0.7    7.0   44.9 |</span><br><span class="line">|  S.D.  |  0.0      0.0  |  0.0    0.0    0.0    0.0    0.0    0.0 |</span><br><span class="line">| Median |1000.0  14919.0 | 93.7    5.4    0.9    0.7    7.0   44.9 |</span><br><span class="line">&#96;-------------------------------------------------------------------&#39;</span><br></pre></td></tr></table></figure>
+<h2 id="四-参考文献"><a class="markdownIt-Anchor" href="#四-参考文献"></a> 四、参考文献</h2>
+<p>[1] Using Synthetic Audio to Improve the Recognition of Out-Of-Vocabulary Words in End-To-End ASR Systems.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ASR-Fine-Tuning/" rel="tag"># ASR Fine-Tuning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/02/10/VoiceConversionReview/" rel="prev" title="Voice Conversion Review">
+      <i class="fa fa-chevron-left"></i> Voice Conversion Review
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/06/14/Prosody-FastSpeech2-Conformer/" rel="next" title="低资源下怎么提高FastSpeech2的韵律表现">
+      低资源下怎么提高FastSpeech2的韵律表现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80-%E5%A2%9E%E5%BC%BAasr%E8%AF%86%E5%88%AB%E4%B8%93%E6%9C%89%E5%90%8D%E8%AF%8D%E7%9A%84%E5%8F%AF%E8%A1%8C%E6%96%B9%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text"> 一、增强ASR识别专有名词的可行方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C-%E5%88%A9%E7%94%A8tts%E5%90%88%E6%88%90%E8%AF%AD%E9%9F%B3%E8%BF%81%E7%A7%BB%E5%AD%A6%E4%B9%A0%E8%AF%A6%E8%A7%A3"><span class="nav-number">2.</span> <span class="nav-text"> 二、利用TTS合成语音迁移学习详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89-%E5%AE%9E%E9%99%85%E9%AA%8C%E8%AF%81"><span class="nav-number">3.</span> <span class="nav-text"> 三、实际验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text"> 四、参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

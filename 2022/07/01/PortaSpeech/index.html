@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="摘要 PortaSpeech：Portable and High-Quality Generative Text-to-Speech">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PortaSpeech">
+<meta property="og:url" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="摘要 PortaSpeech：Portable and High-Quality Generative Text-to-Speech">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/PortaSpeech.jpg">
+<meta property="og:image" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/phoneme.png">
+<meta property="og:image" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/word.png">
+<meta property="og:image" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/blurry.jpg">
+<meta property="article:published_time" content="2022-07-01T01:57:14.000Z">
+<meta property="article:modified_time" content="2022-07-01T10:27:35.030Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="TTS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2022/07/01/PortaSpeech/PortaSpeech.jpg">
+
+<link rel="canonical" href="https://yuan1615.github.io/2022/07/01/PortaSpeech/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>PortaSpeech | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/07/01/PortaSpeech/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PortaSpeech
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-07-01 09:57:14 / Modified: 18:27:35" itemprop="dateCreated datePublished" datetime="2022-07-01T09:57:14+08:00">2022-07-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
+<p><strong>PortaSpeech</strong>：Portable and High-Quality Generative Text-to-Speech</p>
+<span id="more"></span>
+<h2 id="paper"><a class="markdownIt-Anchor" href="#paper"></a> Paper</h2>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2109.15166">https://arxiv.org/abs/2109.15166</a><br>
+<img src="/2022/07/01/PortaSpeech/PortaSpeech.jpg" alt="PortaSpeech"></p>
+<p>论文的出发点：</p>
+<ul>
+<li>VAE模型擅长捕捉长范围之间的语义特征（如韵律），但是结果会 blurry (mel谱会模糊掉) 和 unnatural.</li>
+<li>normallzing flow 能够较好的重构mel谱的细节，但是在模型参数量有限的情况下表现较差</li>
+</ul>
+<p>论文的核心方法：</p>
+<ul>
+<li>轻量级VAE建模韵律，基于flow的后处理网络增强mel谱的细节表达</li>
+<li>为了压缩模型大小，将基于flow的后处理网络中的affine coupling layers引入了分组参数共享机制</li>
+<li>为了提高TTS的表达能力，将原来音素级别的hard-alignment改变为词级别的hard-alignment，词级别到音素级别利用attention进行soft-alignment.</li>
+</ul>
+<p>这里利用Praat看一下音素级别hard-alignment的问题：<br>
+<img src="/2022/07/01/PortaSpeech/phoneme.png" alt="phoneme"><br>
+利用词级别能改善，但是也会存在问题：<br>
+<img src="/2022/07/01/PortaSpeech/word.png" alt="word"><br>
+利用句子级别可能会更好，但是存在鲁棒性降低的风险。</p>
+<h2 id="代码详解"><a class="markdownIt-Anchor" href="#代码详解"></a> 代码详解</h2>
+<p><a target="_blank" rel="noopener" href="https://github.com/NATSpeech/NATSpeech">https://github.com/NATSpeech/NATSpeech</a>该代码使用 <em>pytorch</em>框架</p>
+<p>Text Encoder 模块</p>
+<ol>
+<li>
+<p>phoneme Encoder(FFT blocks), 将输入的音素编码到隐状态[1, 128]维向量，如果存在多说话人，在这里可以加入 speaker embedding，或者 emotion emdedding</p>
+</li>
+<li>
+<p>将音素级别的 hidden state 转换为 word 级别，利用 word 与 phoneme 的对应关系，将一个 word 中音素的 hidden state 求平均即可获得 word 级别 hidden state（论文中命名为word leval pooling operation, WP）</p>
+</li>
+<li>
+<p>word Encoder(FFT blocks), 将第2步生产的 word hidden state 再经过几个fft进行编码</p>
+</li>
+<li>
+<p>将第1步得到的 phoneme 级别的 hidden state 经过 Duration Predictor，获得音素级别的 duration；利用 word 及 phoneme 的对应关系，将 phoneme 级别 duration 进行求和，获得 word 级别的 duration</p>
+</li>
+<li>
+<p>通过 LengthRegular 机制将 word 级别 hidden state（第3步结果） 根据 word duration 进行expand [batch_size, mel_T, hidden_size]</p>
+</li>
+<li>
+<p>Attention:</p>
+<p>6.1. 第1步获得的 phoneme hidden state 与位置编码 cat，经过线性层将维度映射到原来的 hidden size. 生成 K and V（两个是一样的）.</p>
+<p>6.2. 第5步获得的经过 expand 的 word hidden state 与位置编码cat，经过线性层将维度映射到原来的 hidden size，再经过一个文本后处理层，得到最后的 Q</p>
+<p>6.3. 这里有 attn_mask，确保attn的是单词对应到本单词的音素。</p>
+<p>6.4. 输出 x 和 attention weight 结果，这里又利用了残差网络的思路，将 x 和 第6.3步的Q进行了相加</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">def run_text_encoder(self, txt_tokens, word_tokens, ph2word, word_len, mel2word, mel2ph, style_embed, ret):</span><br><span class="line">    word2word &#x3D; torch.arange(word_len)[None, :].to(ph2word.device) + 1  # [B, T_mel, T_word]</span><br><span class="line">    # word2word [B, T_word], [1, 37]</span><br><span class="line">    src_nonpadding &#x3D; (txt_tokens &gt; 0).float()[:, :, None]  # [1, 91, 1]</span><br><span class="line">    # 将音素通过encoder获得context的隐层状态</span><br><span class="line">    ph_encoder_out &#x3D; self.encoder(txt_tokens) * src_nonpadding + style_embed    # [1, 91, 128]</span><br><span class="line">    # 这里 encoder 的结构是： fft</span><br><span class="line"></span><br><span class="line">    # self.hparams[&#39;use_word_encoder&#39;] &#x3D; False</span><br><span class="line">    if self.hparams[&#39;use_word_encoder&#39;]:</span><br><span class="line">        word_encoder_out &#x3D; self.word_encoder(word_tokens) + style_embed</span><br><span class="line">        ph_encoder_out &#x3D; ph_encoder_out + expand_states(word_encoder_out, ph2word)</span><br><span class="line">    # self.hparams[&#39;dur_level&#39;] &#x3D;&#x3D; &#39;word&#39; is True (强制对齐word级别duration, word 到 phone 利用 attention)</span><br><span class="line">    if self.hparams[&#39;dur_level&#39;] &#x3D;&#x3D; &#39;word&#39;:</span><br><span class="line">        word_encoder_out &#x3D; 0</span><br><span class="line">        h_ph_gb_word &#x3D; group_hidden_by_segs(ph_encoder_out, ph2word, word_len)[0]   # [1, 37, 128]</span><br><span class="line">        # 这里是把 phone 级别的 hidden state 转化为 word 级别的（！！！求平均！！！）</span><br><span class="line"></span><br><span class="line">        word_encoder_out &#x3D; word_encoder_out + self.ph2word_encoder(h_ph_gb_word)</span><br><span class="line">        # word_encoder_out 是 又经过了几个 fft blocks 之后的结果（ph2word_encoder）</span><br><span class="line"></span><br><span class="line">        if self.hparams[&#39;use_word_encoder&#39;]:</span><br><span class="line">            word_encoder_out &#x3D; word_encoder_out + self.word_encoder(word_tokens)</span><br><span class="line"></span><br><span class="line">        mel2word &#x3D; self.forward_dur(ph_encoder_out, mel2word, ret, ph2word&#x3D;ph2word, word_len&#x3D;word_len)</span><br><span class="line">        # forward_dur 是做什么的呢：利用 phone 级别 hidden state ---&gt; phone 级别 duration ---&gt; word duration</span><br><span class="line">        # mel2word:          [1, 812] 表示mel的帧对应第i个word，【i】就是mel2word; 812是mel长度</span><br><span class="line">        mel2word &#x3D; clip_mel2token_to_multiple(mel2word, self.hparams[&#39;frames_multiple&#39;])</span><br><span class="line">        # print(self.hparams[&#39;frames_multiple&#39;])       4</span><br><span class="line">        # mel 的 长度 必须是 4 的整数倍，否则删除后续帧</span><br><span class="line">        tgt_nonpadding &#x3D; (mel2word &gt; 0).float()[:, :, None]</span><br><span class="line">        # print(tgt_nonpadding.shape)        # [1, 812, 1]</span><br><span class="line">        enc_pos &#x3D; self.get_pos_embed(word2word, ph2word)  # [B, T_ph, H]</span><br><span class="line">        # print(enc_pos.shape)               # [1, 91, 128]  # 91个 128维的位置编码</span><br><span class="line">        dec_pos &#x3D; self.get_pos_embed(word2word, mel2word)  # [B, T_mel, H]</span><br><span class="line">        # print(dec_pos)                     # [1, 812, 128] 812个 mel帧 128维的位置编码</span><br><span class="line">        dec_word_mask &#x3D; build_word_mask(mel2word, ph2word)  # [B, T_mel, T_ph] torch.Size([1, 812, 91])</span><br><span class="line">        # dec_word_mask 表示的是音素和帧的对齐，通过word进行连接，行表示帧，列表示音素，1表示有关系，0表示没有关系</span><br><span class="line">        x, weight &#x3D; self.attention(ph_encoder_out, enc_pos, word_encoder_out, dec_pos, mel2word, dec_word_mask)</span><br><span class="line">        if self.hparams[&#39;add_word_pos&#39;]:</span><br><span class="line">            x &#x3D; x + self.word_pos_proj(dec_pos)</span><br><span class="line">        ret[&#39;attn&#39;] &#x3D; weight</span><br><span class="line">    else:</span><br><span class="line">        mel2ph &#x3D; self.forward_dur(ph_encoder_out, mel2ph, ret)</span><br><span class="line">        mel2ph &#x3D; clip_mel2token_to_multiple(mel2ph, self.hparams[&#39;frames_multiple&#39;])</span><br><span class="line">        mel2word &#x3D; mel2ph_to_mel2word(mel2ph, ph2word)</span><br><span class="line">        x &#x3D; expand_states(ph_encoder_out, mel2ph)</span><br><span class="line">        if self.hparams[&#39;add_word_pos&#39;]:</span><br><span class="line">            dec_pos &#x3D; self.get_pos_embed(word2word, mel2word)  # [B, T_mel, H]</span><br><span class="line">            x &#x3D; x + self.word_pos_proj(dec_pos)</span><br><span class="line">        tgt_nonpadding &#x3D; (mel2ph &gt; 0).float()[:, :, None]</span><br><span class="line">    if self.hparams[&#39;use_word_encoder&#39;]:</span><br><span class="line">        x &#x3D; x + expand_states(word_encoder_out, mel2word)</span><br><span class="line">    return x, tgt_nonpadding</span><br></pre></td></tr></table></figure>
+<p>Dencoder 模块 (FVAE)</p>
+<p>输入：Text Encoder 获得的结果<br>
+输出：Mel spectrogram</p>
+<ol>
+<li>
+<p>pre-net，将 text Encoder 的结果经过 pre-net 处理，类似于瓶颈层，维度变换[1, 128, 812] --&gt; [1, 128, 203]; 这里进行的是一维卷积操作，卷积核大小 8， 步长为4，padding 为2，（812 + 2*2 - 8）/4 + 1=203</p>
+</li>
+<li>
+<p>VAE-Encoder, 将 mel spectrogram 与 condition 编码到 mean 和 sigma（这里用了log方差，为啥这样呢，因为方差都是非负数的，取log就不用特别设计激活函数了）</p>
+</li>
+<li>
+<p>在VAE引入了prior_flow，由于单纯的正态分布过于简单，这种约束下生成模型的多样性会降低，prior_flow的作用是把正态映射到一个更复杂的分布</p>
+</li>
+<li>
+<p>VAE-Decoder, 利用第2步的输出与condition对mel spectrogram进行重构.</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line">class FVAE(nn.Module):</span><br><span class="line">    def __init__(self,</span><br><span class="line">                 c_in_out, hidden_size, c_latent,</span><br><span class="line">                 kernel_size, enc_n_layers, dec_n_layers, c_cond, strides,</span><br><span class="line">                 use_prior_flow, flow_hidden&#x3D;None, flow_kernel_size&#x3D;None, flow_n_steps&#x3D;None,</span><br><span class="line">                 encoder_type&#x3D;&#39;wn&#39;, decoder_type&#x3D;&#39;wn&#39;):</span><br><span class="line">        super(FVAE, self).__init__()</span><br><span class="line">        self.strides &#x3D; strides                         # [4]</span><br><span class="line">        self.hidden_size &#x3D; hidden_size                 # 128</span><br><span class="line">        self.latent_size &#x3D; c_latent                    # 16</span><br><span class="line">        self.use_prior_flow &#x3D; use_prior_flow</span><br><span class="line">        if np.prod(strides) &#x3D;&#x3D; 1:</span><br><span class="line">            self.g_pre_net &#x3D; nn.Conv1d(c_cond, c_cond, kernel_size&#x3D;1)</span><br><span class="line">        else:</span><br><span class="line">            # c_cond &#x3D; 128</span><br><span class="line">            self.g_pre_net &#x3D; nn.Sequential(*[</span><br><span class="line">                nn.Conv1d(c_cond, c_cond, kernel_size&#x3D;s * 2, stride&#x3D;s, padding&#x3D;s &#x2F;&#x2F; 2)</span><br><span class="line">                for i, s in enumerate(strides)</span><br><span class="line">            ])</span><br><span class="line">            # nn.Conv1d 函数表示：维度计算，原来 203 是从这里来的，卷积后维度 &#x3D; (原始维度 + 2*p - kernel_size) &#x2F; stride + 1</span><br><span class="line">            # 203 &#x3D; (812 + 4 - 8) &#x2F; 4 + 1</span><br><span class="line">        self.encoder &#x3D; FVAEEncoder(c_in_out, hidden_size, c_latent, kernel_size,</span><br><span class="line">                                   enc_n_layers, c_cond, strides&#x3D;strides, nn_type&#x3D;encoder_type)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        if use_prior_flow:</span><br><span class="line">            self.prior_flow &#x3D; ResFlow(</span><br><span class="line">                c_latent, flow_hidden, flow_kernel_size, flow_n_steps, 4, c_cond&#x3D;c_cond)</span><br><span class="line">        self.decoder &#x3D; FVAEDecoder(c_latent, hidden_size, c_in_out, kernel_size,</span><br><span class="line">                                   dec_n_layers, c_cond, strides&#x3D;strides, nn_type&#x3D;decoder_type)</span><br><span class="line">        self.prior_dist &#x3D; dist.Normal(0, 1)</span><br><span class="line"></span><br><span class="line">    def forward(self, x&#x3D;None, nonpadding&#x3D;None, cond&#x3D;None, infer&#x3D;False, noise_scale&#x3D;1.0):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line"></span><br><span class="line">        :param x: [B, C_in_out, T]</span><br><span class="line">        :param nonpadding: [B, 1, T]</span><br><span class="line">        :param cond: [B, C_g, T]</span><br><span class="line">        :return:</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        # 这里三个参数分别表示：</span><br><span class="line">        # x:           真实mel谱图</span><br><span class="line">        # nonpadding:</span><br><span class="line">        # cond:        encoder 的输出， 他的维度和 x 是相同的</span><br><span class="line">        if nonpadding is None:</span><br><span class="line">            nonpadding &#x3D; 1</span><br><span class="line">        # cond 是 encoder 的输出</span><br><span class="line">        cond_sqz &#x3D; self.g_pre_net(cond)     # [1, 128, 203] 类似瓶颈层，先对输入进行一个一维卷积的操作，降低mel的维度</span><br><span class="line"></span><br><span class="line">        if not infer:</span><br><span class="line">            z_q, m_q, logs_q, nonpadding_sqz &#x3D; self.encoder(x, nonpadding, cond_sqz)</span><br><span class="line">            # x: 真实 mel 谱 [1, 80, 812]</span><br><span class="line">            # cond_sqz:     [1, 128, 203], 条件输入，这个是 text encoder 的 output</span><br><span class="line">            # z_q [1, 16, 203]   # 这个表示 根据 m_q 和 logs_q 产生的随机结果</span><br><span class="line">            # m_q [1, 16, 203]   # 这个表示 encoder 之后的均值</span><br><span class="line">            # logs_q [1, 16, 203] # 这个表示 log 的方差，为啥取log呢，因为方差都是正的，取log就不用特殊激活函数了</span><br><span class="line"></span><br><span class="line">            q_dist &#x3D; dist.Normal(m_q, logs_q.exp())</span><br><span class="line">            if self.use_prior_flow:</span><br><span class="line">                logqx &#x3D; q_dist.log_prob(z_q)    # [1, 16, 203] 这个是为了后续计算 kl 散度损失</span><br><span class="line">                # prior_flow: 这里是因为单纯的 正太分布过于简单，这样约束下生成模型的多样性就会降低！该模块的作用是把 正太分布映射到</span><br><span class="line">                # 一个更复杂的分布 （利用 flow 模型将 z_q映射到z_p, 然后用正太分布计算概率，不是特别理解，后续需要再仔细看）</span><br><span class="line">                z_p &#x3D; self.prior_flow(z_q, nonpadding_sqz, cond_sqz)</span><br><span class="line">                logpx &#x3D; self.prior_dist.log_prob(z_p)</span><br><span class="line">                loss_kl &#x3D; ((logqx - logpx) * nonpadding_sqz).sum() &#x2F; nonpadding_sqz.sum() &#x2F; logqx.shape[1]</span><br><span class="line">            else:</span><br><span class="line">                loss_kl &#x3D; torch.distributions.kl_divergence(q_dist, self.prior_dist)</span><br><span class="line">                loss_kl &#x3D; (loss_kl * nonpadding_sqz).sum() &#x2F; nonpadding_sqz.sum() &#x2F; z_q.shape[1]</span><br><span class="line">                z_p &#x3D; None</span><br><span class="line">            return z_q, loss_kl, z_p, m_q, logs_q</span><br><span class="line">        else:</span><br><span class="line">            latent_shape &#x3D; [cond_sqz.shape[0], self.latent_size, cond_sqz.shape[2]]</span><br><span class="line">            z_p &#x3D; torch.randn(latent_shape).to(cond.device) * noise_scale</span><br><span class="line">            if self.use_prior_flow:</span><br><span class="line">                z_p &#x3D; self.prior_flow(z_p, 1, cond_sqz, reverse&#x3D;True)</span><br><span class="line">            return z_p</span><br></pre></td></tr></table></figure>
+<p>Post_Glow 模块</p>
+<p>基于 normalizing flow 的后处理网络，由于VAE合成出来的是比较 blurry 的mel谱图，可以看如下的结果对比，利用 flow 后处理网络可以获得更优的细节表现，可以理解为 Tacotron2 的post-net的作用，不过基于 flow 的更好。<br>
+<img src="/2022/07/01/PortaSpeech/blurry.jpg" alt="blurry"></p>
+<p>传统 flow 必须需要大量参数才能获得更好的结果，作者在 Affine Coupling Layer 加入了参数共享机制，缩小了模型。</p>
+<p>关注到代码中 Post_Glow 是单独训练的，detach()之后，阻断了通过损失函数反向传播修改参数。</p>
+<p>Glow 的更多细节可参考如下文章及博客：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/59615785">Normalization Flow</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1807.03039">Glow</a></li>
+</ul>
+<p>损失函数包含如下四个部分：</p>
+<ol>
+<li>word level duration loss, MSE, log scale;</li>
+<li>VAE 中的重构损失，MAS</li>
+<li>VAE 中的分布约束损失，KL-divergence</li>
+<li>Post-Net 的非负对数似然</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TTS/" rel="tag"># TTS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/06/14/Prosody-FastSpeech2-Conformer/" rel="prev" title="低资源下怎么提高FastSpeech2的韵律表现">
+      <i class="fa fa-chevron-left"></i> 低资源下怎么提高FastSpeech2的韵律表现
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/03/VITS/" rel="next" title="VITS">
+      VITS <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#paper"><span class="nav-number">1.1.</span> <span class="nav-text"> Paper</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.</span> <span class="nav-text"> 代码详解</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
