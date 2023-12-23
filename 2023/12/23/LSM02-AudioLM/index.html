@@ -21,18 +21,21 @@
     var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="AudioLM:">
+  <meta name="description" content="AudioLM: a Language Modeling Approach to Audio Generation: 利用 LLM 的思路对语音建模，目的是可以语音续写（就是给一个几秒的语音 Prompt，然后按照这个提示往后续写），实验下来不仅可以进行语音续写，还可以进行钢琴🎹曲的续写。模型主要利用了两个离散化方法，分别是通过 SoundStream 获得 Acoustic tokens，通过">
 <meta property="og:type" content="article">
 <meta property="og:title" content="语音生成大模型系列（二）：AudioLM">
 <meta property="og:url" content="https://yuan1615.github.io/2023/12/23/LSM02-AudioLM/index.html">
 <meta property="og:site_name" content="1615">
-<meta property="og:description" content="AudioLM:">
+<meta property="og:description" content="AudioLM: a Language Modeling Approach to Audio Generation: 利用 LLM 的思路对语音建模，目的是可以语音续写（就是给一个几秒的语音 Prompt，然后按照这个提示往后续写），实验下来不仅可以进行语音续写，还可以进行钢琴🎹曲的续写。模型主要利用了两个离散化方法，分别是通过 SoundStream 获得 Acoustic tokens，通过">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2023/12/23/LSM02-AudioLM/audiolm-token.png">
+<meta property="og:image" content="https://yuan1615.github.io/2023/12/23/LSM02-AudioLM/audiolm.png">
 <meta property="article:published_time" content="2023-12-23T10:38:49.000Z">
-<meta property="article:modified_time" content="2023-12-23T11:59:52.966Z">
+<meta property="article:modified_time" content="2023-12-23T12:25:37.608Z">
 <meta property="article:author" content="Xin Yuan">
 <meta property="article:tag" content="TTS">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2023/12/23/LSM02-AudioLM/audiolm-token.png">
 
 <link rel="canonical" href="https://yuan1615.github.io/2023/12/23/LSM02-AudioLM/">
 
@@ -191,7 +194,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-12-23 18:38:49 / Modified: 19:59:52" itemprop="dateCreated datePublished" datetime="2023-12-23T18:38:49+08:00">2023-12-23</time>
+              <time title="Created: 2023-12-23 18:38:49 / Modified: 20:25:37" itemprop="dateCreated datePublished" datetime="2023-12-23T18:38:49+08:00">2023-12-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -214,13 +217,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">AudioLM</a></strong>:</p>
+        <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">AudioLM: a Language Modeling Approach to Audio Generation</a></strong>: 利用 LLM 的思路对语音建模，目的是可以语音续写（就是给一个几秒的语音 Prompt，然后按照这个提示往后续写），实验下来不仅可以进行语音续写，还可以进行钢琴🎹曲的续写。模型主要利用了两个离散化方法，分别是通过 SoundStream 获得 Acoustic tokens，通过 w2v-BERT 获得 Semantic tokens。Semantic token 主要保证续写的长期结构，主要是可懂度； Acoustic token 主要保证续写的声学特征，主要是音色、韵律、背景环境这种。</p>
 <span id="more"></span>
 <h2 id="paper"><a class="markdownIt-Anchor" href="#paper"></a> Paper</h2>
 <p>论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">https://arxiv.org/abs/2209.03143</a></p>
 <h2 id="代码"><a class="markdownIt-Anchor" href="#代码"></a> 代码</h2>
 <p>大佬<a target="_blank" rel="noopener" href="https://github.com/lucidrains">Phil Wang</a>复现版本<a target="_blank" rel="noopener" href="https://github.com/lucidrains/audiolm-pytorch">AudioLM</a></p>
 <h2 id="细节解读"><a class="markdownIt-Anchor" href="#细节解读"></a> 细节解读</h2>
+<p>框架图如下：</p>
+<ul>
+<li>获取离散 tokens<br>
+<img src="/2023/12/23/LSM02-AudioLM/audiolm-token.png" alt="audiolm-token"></li>
+<li>主体模型<br>
+<img src="/2023/12/23/LSM02-AudioLM/audiolm.png" alt="audiolm"></li>
+</ul>
 <h2 id="实验"><a class="markdownIt-Anchor" href="#实验"></a> 实验</h2>
 <h2 id="总结思考"><a class="markdownIt-Anchor" href="#总结思考"></a> 总结思考</h2>
 

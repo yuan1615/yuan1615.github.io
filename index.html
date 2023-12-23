@@ -186,7 +186,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-12-23 18:39:05 / Modified: 20:00:07" itemprop="dateCreated datePublished" datetime="2023-12-23T18:39:05+08:00">2023-12-23</time>
+              <time title="Created: 2023-12-23 18:39:05 / Modified: 20:54:05" itemprop="dateCreated datePublished" datetime="2023-12-23T18:39:05+08:00">2023-12-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -209,7 +209,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">VALL-E</a></strong>:</p>
+          <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2301.02111">Neural Codec Language Models are Zero-Shot Text to Speech Synthesizers</a></strong>: 想法和思路与 AudioLM 类似，就是将 Semantic tokens 生成的过程换成了文本输入。然后利用几秒的提示语音获得声学特征，包括音色、韵律、背景环境等。这样就可以做 zero-shot 的语音生成了。VALL-E 利用 EnCodec 作为离散 token 提取和解码模型。VALL-E 有一些后续工作，包括多语音版本<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2303.03926.pdf">VALL-E X</a>，多任务版本<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2308.06873">Speech X</a>。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2023/12/23/LSM03-VALL-E/#more" rel="contents">
@@ -261,7 +261,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-12-23 18:38:49 / Modified: 19:59:52" itemprop="dateCreated datePublished" datetime="2023-12-23T18:38:49+08:00">2023-12-23</time>
+              <time title="Created: 2023-12-23 18:38:49 / Modified: 20:25:37" itemprop="dateCreated datePublished" datetime="2023-12-23T18:38:49+08:00">2023-12-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -284,7 +284,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">AudioLM</a></strong>:</p>
+          <p><strong><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2209.03143">AudioLM: a Language Modeling Approach to Audio Generation</a></strong>: 利用 LLM 的思路对语音建模，目的是可以语音续写（就是给一个几秒的语音 Prompt，然后按照这个提示往后续写），实验下来不仅可以进行语音续写，还可以进行钢琴🎹曲的续写。模型主要利用了两个离散化方法，分别是通过 SoundStream 获得 Acoustic tokens，通过 w2v-BERT 获得 Semantic tokens。Semantic token 主要保证续写的长期结构，主要是可懂度； Acoustic token 主要保证续写的声学特征，主要是音色、韵律、背景环境这种。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2023/12/23/LSM02-AudioLM/#more" rel="contents">
