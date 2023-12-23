@@ -21,22 +21,20 @@
     var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="摘要 声纹识别：主要是通过声音来识别人的任务。主要的子任务有 speaker verification（说话人验证）、speaker identification（说话人识别）和 speaker diarization（从多说话人语音中分离成单个说话人的语音片段）。下图可以很好说明">
+  <meta name="description" content="摘要 非实时语音转换：语音（歌声）转换的开源项目已经很多了，包括so-vits-svc、RVC等。在这里主要想记录一下最近的一些经验。我主要想构建 any-to-many 的语音转换，many提供的数据要尽可能的少（10-20句），同时要保证模型的鲁棒性，即转换之后的可懂度要高、与目标说话人的相似度要高。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Speaker Recognition：An Overview">
-<meta property="og:url" content="https://yuan1615.github.io/2021/11/02/SpeakerRecognition/index.html">
+<meta property="og:title" content="非实时 VC">
+<meta property="og:url" content="https://yuan1615.github.io/2023/12/02/VoiceConversion/index.html">
 <meta property="og:site_name" content="1615">
-<meta property="og:description" content="摘要 声纹识别：主要是通过声音来识别人的任务。主要的子任务有 speaker verification（说话人验证）、speaker identification（说话人识别）和 speaker diarization（从多说话人语音中分离成单个说话人的语音片段）。下图可以很好说明">
+<meta property="og:description" content="摘要 非实时语音转换：语音（歌声）转换的开源项目已经很多了，包括so-vits-svc、RVC等。在这里主要想记录一下最近的一些经验。我主要想构建 any-to-many 的语音转换，many提供的数据要尽可能的少（10-20句），同时要保证模型的鲁棒性，即转换之后的可懂度要高、与目标说话人的相似度要高。">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://yuan1615.github.io/2021/11/02/SpeakerRecognition/task.png">
-<meta property="article:published_time" content="2021-11-02T07:30:47.000Z">
-<meta property="article:modified_time" content="2021-11-03T05:59:29.325Z">
+<meta property="article:published_time" content="2023-12-02T03:42:46.000Z">
+<meta property="article:modified_time" content="2023-12-23T10:35:39.319Z">
 <meta property="article:author" content="Xin Yuan">
-<meta property="article:tag" content="Speaker Recognition">
+<meta property="article:tag" content="VC">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://yuan1615.github.io/2021/11/02/SpeakerRecognition/task.png">
 
-<link rel="canonical" href="https://yuan1615.github.io/2021/11/02/SpeakerRecognition/">
+<link rel="canonical" href="https://yuan1615.github.io/2023/12/02/VoiceConversion/">
 
 
 <script id="page-configurations">
@@ -49,7 +47,7 @@
   };
 </script>
 
-  <title>Speaker Recognition：An Overview | 1615</title>
+  <title>非实时 VC | 1615</title>
   
 
 
@@ -169,7 +167,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/11/02/SpeakerRecognition/">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2023/12/02/VoiceConversion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/me.jpg">
@@ -182,7 +180,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Speaker Recognition：An Overview
+          非实时 VC
         </h1>
 
         <div class="post-meta">
@@ -192,14 +190,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-11-02 15:30:47" itemprop="dateCreated datePublished" datetime="2021-11-02T15:30:47+08:00">2021-11-02</time>
+              <time title="Created: 2023-12-02 11:42:46" itemprop="dateCreated datePublished" datetime="2023-12-02T11:42:46+08:00">2023-12-02</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-11-03 13:59:29" itemprop="dateModified" datetime="2021-11-03T13:59:29+08:00">2021-11-03</time>
+                <time title="Modified: 2023-12-23 18:35:39" itemprop="dateModified" datetime="2023-12-23T18:35:39+08:00">2023-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -207,7 +205,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Speaker-Recognition/" itemprop="url" rel="index"><span itemprop="name">Speaker Recognition</span></a>
+                  <a href="/categories/VoiceConversion/" itemprop="url" rel="index"><span itemprop="name">VoiceConversion</span></a>
                 </span>
             </span>
 
@@ -223,14 +221,39 @@
 
       
         <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
-<p>声纹识别：主要是通过声音来识别人的任务。主要的子任务有 speaker verification（说话人验证）、speaker identification（说话人识别）和 speaker diarization（从多说话人语音中分离成单个说话人的语音片段）。下图可以很好说明</p>
-<p><img src="/2021/11/02/SpeakerRecognition/task.png" alt="task"></p>
+<p><strong>非实时语音转换</strong>：语音（歌声）转换的开源项目已经很多了，包括<a target="_blank" rel="noopener" href="https://github.com/svc-develop-team/so-vits-svc">so-vits-svc</a>、<a target="_blank" rel="noopener" href="https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI">RVC</a>等。在这里主要想记录一下最近的一些经验。我主要想构建 any-to-many 的语音转换，many提供的数据要尽可能的少（10-20句），同时要保证模型的鲁棒性，即转换之后的可懂度要高、与目标说话人的相似度要高。</p>
 <span id="more"></span>
-<h1 id="引言"><a class="markdownIt-Anchor" href="#引言"></a> 引言</h1>
-<p>声纹识别主要利用了说话人声音里的个人特征，这些个人特征主要是由于独特的发音器官和说话方式导致的，例如声道形状、喉咙大小、口音和韵律等。</p>
-<p>声纹识别主要的应用场景有：个人智能设备（如电话、汽车、笔记本）的基于语音的身份验证；银行交易、远程支付；侦察犯罪嫌疑人；还可以作为ASR的前端，提高多说话人对话的转录性能。</p>
-<p>经典的模型：Gaussian mixture model based universal background model (GMM-UBM) 前端模型 (用于提取说话人特征) + probabilistic linear discriminant analysis (PLDA) 后端模型（用于计算提取特征的相似度）</p>
-<p>目前的模型：deep neural networks (DNNs)</p>
+<h2 id="主体框架的选择"><a class="markdownIt-Anchor" href="#主体框架的选择"></a> 主体框架的选择</h2>
+<p>通过分析 VCC <a target="_blank" rel="noopener" href="http://vc-challenge.org/vcc2016/summary.html">2016</a>-<a target="_blank" rel="noopener" href="http://vc-challenge.org/vcc2018/index.html">2018</a>-<a target="_blank" rel="noopener" href="http://vc-challenge.org/vcc2020/index.html">2020</a> 三年的语音转换比赛，同时借鉴开源项目的一些经验，最终确定了语音内容提取模型、声学模型、声码器这样串联的结构。与语音合成区别比较大的就是语音内容提取模块了，这里可以类比语音合成的前端。</p>
+<h2 id="语音内容提取"><a class="markdownIt-Anchor" href="#语音内容提取"></a> 语音内容提取</h2>
+<p>主要的功能就是将源语音中的内容提取出来，把音色等信息过滤掉，这里的方法有比较多，详细的可以看so-vits-svc里的种类，经过对比最终确定了<a target="_blank" rel="noopener" href="https://huggingface.co/openai/whisper-large-v2">whisper-large-v2</a>，总体来看就是该模型的鲁棒性高，对噪声不敏感；同时转换后的发音更准确。但是，在实际过程中来看，whisper 提取出的 Encoder BNF 特征不仅包含了内容信息，其实把音色等其他信息也很好的保留了下来，这里经过 Encoder 之后又构建了几层的卷积操作，同时有一个转置卷积进行2倍上采样。后续在声学模型输入中强制+上spk信息（利用了<a target="_blank" rel="noopener" href="https://github.com/alibaba-damo-academy/3D-Speaker">eres2net</a>,需要注意的是，提取的spk特征的方差很大，需要做归一化处理，要不然模型收敛困难），在训练过程中加入了spk对抗训练去提取更干净的内容信息，以防止音色泄漏的问题。但是实验下来，梯度反转（GRL）加不加都差不多！</p>
+<p>这里也实验了其他的 ASR 识别模型作为内容提取模型，包括 paraformer、wenet等，但是这些 ASR 模型为了减少识别的计算量，在模型的开始都使用了卷积进行4倍降采样操作，paraformer 还利用了低帧率等操作。使得后续声学模型需要进行上采样，这个过程会丢失一些细节信息，然后再“脑补”，会导致发音不清晰等现象。这里最好自己从头训练一个没有降采样的 ASR 模型。</p>
+<h2 id="声学模型"><a class="markdownIt-Anchor" href="#声学模型"></a> 声学模型</h2>
+<ul>
+<li>
+<p>Tacotron2 的修改版（这里主要借鉴了 <a target="_blank" rel="noopener" href="https://github.com/bshall/soft-vc">Soft-VC</a>）,针对小样本不是太友好，单个说话人数据量大一点的话，模型各方面表现不错。</p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://grad-tts.github.io/">Grad-TTS</a>，这里主要借鉴了<a target="_blank" rel="noopener" href="https://github.com/gmltmd789/UnitSpeech">UnitSpeech</a>,针对小样本友好。没有过多的改进。</p>
+</li>
+</ul>
+<h2 id="声码器"><a class="markdownIt-Anchor" href="#声码器"></a> 声码器</h2>
+<p>利用了 <a target="_blank" rel="noopener" href="https://github.com/NVIDIA/BigVGAN">BigVGAN</a>,针对内部数据进行了微调。</p>
+<h2 id="数据及训练的一些技巧"><a class="markdownIt-Anchor" href="#数据及训练的一些技巧"></a> 数据及训练的一些技巧</h2>
+<ul>
+<li>每个说话人的数据不要过多，说话人的种类要多。</li>
+<li>Whisper 针对中文数据进行了微调，WER 大约在4-5%。</li>
+<li>数据进一步利用 Whisper 进行了筛选，筛选出 Whisper 能完全识别准确的数据进行基础模型的训练，自己品！</li>
+<li>微调数据需要安静的环境下录制，20句能保证稳定的效果。</li>
+<li>由于是语音转换，没有歌声转换，这里没有对pitch进行建模。</li>
+</ul>
+<h2 id="总结及思考"><a class="markdownIt-Anchor" href="#总结及思考"></a> 总结及思考</h2>
+<ul>
+<li>现在的语音转换有一个问题，就是都是帧级别对齐的，这样就没有了目标说话人的韵律等信息，在看<a target="_blank" rel="noopener" href="https://www.iqiyi.com/v_10bqbh8w65c.html?vfrm=pcw_home&amp;vfrmblk=fcs_6&amp;vfrmrst=fcs_6_p1">王牌对王牌第八季-2</a>中可以看到，转换之后音色相似，但是缺少了一些韵味，比如没有北京话的味道了。可以考虑不做对齐进行改善。</li>
+<li>现在语音合成的效果太逼真了，尤其是韵律和表现力方面，那语音转换的作用除了现有内容资源的扩充以外，还能做什么用呢？</li>
+<li>语音转换可以用来进行降噪的尝试。</li>
+<li>语音转换和语音合成的统一建模也很有意思，本来后端用的声学模型和声码器就是共用的。</li>
+</ul>
 
     </div>
 
@@ -240,7 +263,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Speaker-Recognition/" rel="tag"># Speaker Recognition</a>
+              <a href="/tags/VC/" rel="tag"># VC</a>
           </div>
 
         
@@ -249,13 +272,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2021/10/08/Tacotron2/" rel="prev" title="Tacotron2">
-      <i class="fa fa-chevron-left"></i> Tacotron2
+    <a href="/2023/04/11/MQTTS/" rel="prev" title="MQTTS">
+      <i class="fa fa-chevron-left"></i> MQTTS
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2021/11/03/WeNet/" rel="next" title="WeNet">
-      WeNet <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -314,7 +334,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">2.</span> <span class="nav-text"> 引言</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text"> 摘要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E4%BD%93%E6%A1%86%E6%9E%B6%E7%9A%84%E9%80%89%E6%8B%A9"><span class="nav-number">1.1.</span> <span class="nav-text"> 主体框架的选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E9%9F%B3%E5%86%85%E5%AE%B9%E6%8F%90%E5%8F%96"><span class="nav-number">1.2.</span> <span class="nav-text"> 语音内容提取</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A3%B0%E5%AD%A6%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.3.</span> <span class="nav-text"> 声学模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A3%B0%E7%A0%81%E5%99%A8"><span class="nav-number">1.4.</span> <span class="nav-text"> 声码器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%8F%8A%E8%AE%AD%E7%BB%83%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7"><span class="nav-number">1.5.</span> <span class="nav-text"> 数据及训练的一些技巧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%8F%8A%E6%80%9D%E8%80%83"><span class="nav-number">1.6.</span> <span class="nav-text"> 总结及思考</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
