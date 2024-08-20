@@ -161,6 +161,171 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2022/01/21/HiFi-GAN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/21/HiFi-GAN/" class="post-title-link" itemprop="url">HiFi-GAN</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-01-21 10:36:33" itemprop="dateCreated datePublished" datetime="2022-01-21T10:36:33+08:00">2022-01-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-09-08 20:13:22" itemprop="dateModified" datetime="2022-09-08T20:13:22+08:00">2022-09-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>HiFi-GAN</strong>：有效的、从 mel-spectrogram 生成高质量的 raw waveforms 模型。主要考虑了“语音信号是由不同周期的正弦组成”，在 GAN 模型的 generator 和 discriminator 分别利用了这一点，对音频的周期模式进行建模，从而提高了合成质量。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/01/21/HiFi-GAN/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/12/20/code-switched-TTS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/12/20/code-switched-TTS/" class="post-title-link" itemprop="url">怎么构建一个双语或Code-Switched的TTS系统？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-12-20 14:22:26" itemprop="dateCreated datePublished" datetime="2021-12-20T14:22:26+08:00">2021-12-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-08-17 10:39:37" itemprop="dateModified" datetime="2022-08-17T10:39:37+08:00">2022-08-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Text-to-Speech/" itemprop="url" rel="index"><span itemprop="name">Text to Speech</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="摘要"><a class="markdownIt-Anchor" href="#摘要"></a> 摘要</h1>
+<p>问题：怎么根据单一语种数据，构建双语或者是Code-Switched的TTS。</p>
+<p>解决方案：利用VC进行数据增强，然后再强行将两个语种的数据堆到一个TTS模型就可以</p>
+<p>这篇文章是阿里提出的，详细地址<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2010.08136v1">https://arxiv.org/abs/2010.08136v1</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/12/20/code-switched-TTS/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/11/03/WeNet/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -810,157 +975,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/02/25/VSMap/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/me.jpg">
-      <meta itemprop="name" content="Xin Yuan">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="1615">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/25/VSMap/" class="post-title-link" itemprop="url">A Visualization Panel with Shiny</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-02-25 17:45:58 / Modified: 21:14:27" itemprop="dateCreated datePublished" datetime="2021-02-25T17:45:58+08:00">2021-02-25</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文介绍利用R语言中<a target="_blank" rel="noopener" href="https://shiny.rstudio.com/">Shiny</a>构建可视化面板，该可视化面板包含了以下三个部分：基于<a target="_blank" rel="noopener" href="https://leafletjs.com/">Leaflet</a>的地图可视化、基于<a target="_blank" rel="noopener" href="https://plotly.com/r/">plotly</a>的交互图形以及基于<a target="_blank" rel="noopener" href="https://CRAN.R-project.org/package=DT">DT</a>的交互式表格。效果见<a target="_blank" rel="noopener" href="https://yuan1615.shinyapps.io/VSmap/">https://yuan1615.shinyapps.io/VSmap/</a>。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/02/25/VSMap/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2021/02/24/MachineLearning2019/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/me.jpg">
-      <meta itemprop="name" content="Xin Yuan">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="1615">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/24/MachineLearning2019/" class="post-title-link" itemprop="url">Machine Learning 2019</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-02-24 09:29:17" itemprop="dateCreated datePublished" datetime="2021-02-24T09:29:17+08:00">2021-02-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-25 21:16:01" itemprop="dateModified" datetime="2021-02-25T21:16:01+08:00">2021-02-25</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Machine-Learning/" itemprop="url" rel="index"><span itemprop="name">Machine Learning</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文是2019年机器学习课程学习笔记，分为7个章节，分别是引言、模型评估与选择、线性模型、决策树、支持向量机、神经网络、朴素贝叶斯。各章节的写作结构是从问题出发，然后介绍各算法理论知识，最终编程实现算法。编程软件为R语言。详细数据及代码见<a target="_blank" rel="noopener" href="https://github.com/yuan1615/ML2019">ML2019</a>。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/02/24/MachineLearning2019/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1028,20 +1046,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-count">32</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-count">23</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
