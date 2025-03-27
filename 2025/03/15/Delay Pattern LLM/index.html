@@ -24,21 +24,21 @@
   <meta name="description" content="GCM：Grouped Code Modeling（GCM） 是 Vall-E 2 提出的一种加速模型训练及推理的方法，同时可以使得建模的序列更长。核心观点就是可以将相邻的多个 speech token 合并建模。主要还是 codec 的帧率太大了，原始的 encodec 帧率是75；CosyVoice1 帧率是 50，CosyVoice2 帧率是 25。但是实际上针对语音语义token来说，帧率">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Grouped Code Modeling">
-<meta property="og:url" content="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/index.html">
+<meta property="og:url" content="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/index.html">
 <meta property="og:site_name" content="1615">
 <meta property="og:description" content="GCM：Grouped Code Modeling（GCM） 是 Vall-E 2 提出的一种加速模型训练及推理的方法，同时可以使得建模的序列更长。核心观点就是可以将相邻的多个 speech token 合并建模。主要还是 codec 的帧率太大了，原始的 encodec 帧率是75；CosyVoice1 帧率是 50，CosyVoice2 帧率是 25。但是实际上针对语音语义token来说，帧率">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/gcm.png">
-<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/valle2paper1.png">
-<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/valle2paper2.png">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/gcm.png">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/valle2paper1.png">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/valle2paper2.png">
 <meta property="article:published_time" content="2025-03-15T11:45:16.000Z">
 <meta property="article:modified_time" content="2025-03-13T12:27:09.000Z">
 <meta property="article:author" content="Xin Yuan">
 <meta property="article:tag" content="LLM">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/gcm.png">
+<meta name="twitter:image" content="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/gcm.png">
 
-<link rel="canonical" href="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/">
+<link rel="canonical" href="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/">
 
 
 <script id="page-configurations">
@@ -171,7 +171,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2025/03/15/Grouped_Code_Modeling/">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2025/03/15/Delay%20Pattern%20LLM/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/me.jpg">
@@ -231,10 +231,10 @@
 </ul>
 <h2 id="理论部分"><a class="markdownIt-Anchor" href="#理论部分"></a> 理论部分</h2>
 <p>Vall-E 2还是分为了自回归和非自回归两个模块，GCM主要是在自回归模块应用，如下图所示：</p>
-<p><img src="/2025/03/15/Grouped_Code_Modeling/gcm.png" alt="gcm"></p>
+<p><img src="/2025/03/15/Delay%20Pattern%20LLM/gcm.png" alt="gcm"></p>
 <p>这个是论文中关于GCM的定义：</p>
-<p><img src="/2025/03/15/Grouped_Code_Modeling/valle2paper1.png" alt="valle2paper1"></p>
-<p><img src="/2025/03/15/Grouped_Code_Modeling/valle2paper2.png" alt="valle2paper2"></p>
+<p><img src="/2025/03/15/Delay%20Pattern%20LLM/valle2paper1.png" alt="valle2paper1"></p>
+<p><img src="/2025/03/15/Delay%20Pattern%20LLM/valle2paper2.png" alt="valle2paper2"></p>
 <h2 id="代码部分"><a class="markdownIt-Anchor" href="#代码部分"></a> 代码部分</h2>
 <p>实际代码实现起来还是比较容易的：</p>
 <ul>
@@ -289,12 +289,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2025/03/15/Delay%20Pattern%20LLM/" rel="prev" title="Grouped Code Modeling">
-      <i class="fa fa-chevron-left"></i> Grouped Code Modeling
+    <a href="/2024/09/08/CLVP/" rel="prev" title="CLVP">
+      <i class="fa fa-chevron-left"></i> CLVP
     </a></div>
       <div class="post-nav-item">
-    <a href="/2025/03/16/Data_Extract_DAC/" rel="next" title="快速提取 DAC 的 Speech Token">
-      快速提取 DAC 的 Speech Token <i class="fa fa-chevron-right"></i>
+    <a href="/2025/03/15/Grouped_Code_Modeling/" rel="next" title="Grouped Code Modeling">
+      Grouped Code Modeling <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
