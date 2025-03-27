@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+<link href="https://cdn.bootcss.com/KaTeX/0.7.1/katex.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen（https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Delay Pattern LLM">
+<meta property="og:url" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/index.html">
+<meta property="og:site_name" content="1615">
+<meta property="og:description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen（https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-03-29T11:45:16.000Z">
+<meta property="article:modified_time" content="2025-03-27T15:27:14.525Z">
+<meta property="article:author" content="Xin Yuan">
+<meta property="article:tag" content="LLM">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Delay Pattern LLM | 1615</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">1615</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/me.jpg">
+      <meta itemprop="name" content="Xin Yuan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="1615">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Delay Pattern LLM
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-03-29 19:45:16" itemprop="dateCreated datePublished" datetime="2025-03-29T19:45:16+08:00">2025-03-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-03-27 23:27:14" itemprop="dateModified" datetime="2025-03-27T23:27:14+08:00">2025-03-27</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Audio-Gen/" itemprop="url" rel="index"><span itemprop="name">Audio Gen</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>最早看到 Delay Pattern 应该是 meta 在 musicgen（<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.05284%EF%BC%89%E4%B8%AD%E6%8F%90%E5%87%BA%E7%9A%84%EF%BC%8C%E4%B8%BB%E8%A6%81%E5%B0%B1%E6%98%AF%E9%9F%B3%E9%A2%91%E7%BC%96%E8%A7%A3%E7%A0%81%E5%99%A8%E6%98%AFRVQ%E7%9A%84%E5%BD%A2%E5%BC%8F%EF%BC%8C%E8%BF%99%E4%B8%AA%E6%97%B6%E5%80%99%E6%80%8E%E4%B9%88%E5%88%A9%E7%94%A8LLM%E5%B0%B1%E4%BC%9A%E6%9C%89%E5%BE%88%E5%A4%9A%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84%E5%BA%8F%E5%88%97%E6%9E%84%E9%80%A0%E6%96%B9%E5%BC%8F%EF%BC%8C%E5%BD%93%E6%97%B6">https://arxiv.org/pdf/2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时</a> musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。</p>
+<span id="more"></span>
+<p>整体的对比图如下所示，后续很多工作（主要是涉及到利用 RVQ的）陆续开始使用 Delay LLM，如Parler-tts、audiocraft等。另一种方式也有一个，就是利用 RQ-Transformer；这个后续介绍。</p>
+<p>![Delay Pattern LLM-1](Delay Pattern LLM-1.png)<br>
+![Delay Pattern LLM-2](Delay Pattern LLM-1.png)<br>
+![Delay Pattern LLM-2](Delay Pattern LLM-1.png)</p>
+<p>这种 Delay 方式就是在构造训练数据和推理的时候需要注意一下，其他基本都是一致的。</p>
+<h3 id="训练阶段"><a class="markdownIt-Anchor" href="#训练阶段"></a> 训练阶段</h3>
+<ol>
+<li>将 RVQ token 变为 Delay 模式</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">def build_delay_pattern_mask(</span><br><span class="line">    self, input_ids: torch.LongTensor, bos_token_id: int, pad_token_id: int, max_length: int, num_codebooks: int</span><br><span class="line">):</span><br><span class="line">    &quot;&quot;&quot;Build a delayed pattern mask to the input_ids. Each codebook is offset by the previous codebook by</span><br><span class="line">    one, giving a delayed pattern mask at the start of sequence and end of sequence. Take the example where there</span><br><span class="line">    are 4 codebooks and a max sequence length of 8, we have the delayed pattern mask of shape &#96;(codebooks,</span><br><span class="line">    seq_len)&#96;:</span><br><span class="line">    - [B, -1, -1, -1, -1, P, P, P]</span><br><span class="line">    - [B, B, -1, -1, -1, -1, P, P]</span><br><span class="line">    - [B, B, B, -1, -1, -1, -1, P]</span><br><span class="line">    - [B, B, B, B, -1, -1, -1, -1]</span><br><span class="line">    where P is the special padding token id and -1 indicates that the token is valid for prediction. If we include</span><br><span class="line">    a prompt (decoder input ids), the -1 positions indicate where new tokens should be predicted. Otherwise, the</span><br><span class="line">    mask is set to the value in the prompt:</span><br><span class="line">    - [B, a, b, -1, -1, P, P, P]</span><br><span class="line">    - [B, B, c, d, -1, -1, P, P]</span><br><span class="line">    - [B, B, B, e, f, -1, -1, P]</span><br><span class="line">    - [B, B, B, B, g, h, -1, -1]</span><br><span class="line">    where a-h indicate the input prompt (decoder input ids) that are offset by 1. Now, we only override the -1</span><br><span class="line">    tokens in our prediction.</span><br><span class="line">    &quot;&quot;&quot;</span><br><span class="line">    # (bsz * num_codebooks, seq_len) -&gt; (bsz, num_codebooks, seq_len)</span><br><span class="line">    input_ids &#x3D; input_ids.reshape(-1, num_codebooks, input_ids.shape[-1])</span><br><span class="line">    bsz, num_codebooks, seq_len &#x3D; input_ids.shape</span><br><span class="line"></span><br><span class="line">    input_ids_shifted &#x3D; torch.ones((bsz, num_codebooks, max_length), dtype&#x3D;torch.long, device&#x3D;input_ids.device) * -1</span><br><span class="line"></span><br><span class="line">    # we only apply the mask if we have a large enough seq len - otherwise we return as is</span><br><span class="line">    if max_length &lt; 2 * num_codebooks - 1:</span><br><span class="line">        return input_ids.reshape(bsz * num_codebooks, -1), input_ids_shifted.reshape(bsz * num_codebooks, -1)</span><br><span class="line"></span><br><span class="line">    # fill the shifted ids with the prompt entries, offset by the codebook idx</span><br><span class="line">    for codebook in range(num_codebooks):</span><br><span class="line">        # mono channel - loop over the codebooks one-by-one</span><br><span class="line">        input_ids_shifted[:, codebook, codebook : seq_len + codebook] &#x3D; input_ids[:, codebook]</span><br><span class="line"></span><br><span class="line">    # construct a pattern mask that indicates the positions of padding tokens for each codebook</span><br><span class="line">    # first fill the upper triangular part (the EOS padding)</span><br><span class="line">    eos_delay_pattern &#x3D; torch.triu(</span><br><span class="line">        torch.ones((num_codebooks, max_length), dtype&#x3D;torch.bool), diagonal&#x3D;max_length - num_codebooks + 1</span><br><span class="line">    )</span><br><span class="line">    # then fill the lower triangular part (the BOS padding)</span><br><span class="line">    bos_delay_pattern &#x3D; torch.tril(torch.ones((num_codebooks, max_length), dtype&#x3D;torch.bool))</span><br><span class="line"></span><br><span class="line">    bos_mask &#x3D; ~(bos_delay_pattern).to(input_ids.device)</span><br><span class="line">    eos_mask &#x3D; ~(eos_delay_pattern).to(input_ids.device)</span><br><span class="line">    mask &#x3D; ~(bos_delay_pattern + eos_delay_pattern).to(input_ids.device)</span><br><span class="line">    input_ids &#x3D; mask * input_ids_shifted + ~bos_mask * bos_token_id + ~eos_mask * pad_token_id</span><br><span class="line"></span><br><span class="line">    # find the first position to start generating - this is the first place we have the -1 token</span><br><span class="line">    # and will always be in the first codebook (since it has no codebook offset)</span><br><span class="line">    first_codebook_ids &#x3D; input_ids[:, 0, :]</span><br><span class="line">    start_ids &#x3D; (first_codebook_ids &#x3D;&#x3D; -1).nonzero()[:, 1]</span><br><span class="line">    if len(start_ids) &gt; 0:</span><br><span class="line">        first_start_id &#x3D; min(start_ids)</span><br><span class="line">    else:</span><br><span class="line">        # we have no tokens that need to be filled - return entire matrix of input ids</span><br><span class="line">        first_start_id &#x3D; seq_len</span><br><span class="line"></span><br><span class="line">    # (bsz * num_codebooks, seq_len) -&gt; (bsz, num_codebooks, seq_len)</span><br><span class="line">    pattern_mask &#x3D; input_ids.reshape(bsz * num_codebooks, -1)</span><br><span class="line">    input_ids &#x3D; input_ids[..., :first_start_id].reshape(bsz * num_codebooks, -1)</span><br><span class="line">    return input_ids, pattern_mask</span><br><span class="line"></span><br><span class="line">def postprocess_dataset(self, labels):</span><br><span class="line">    bos_labels &#x3D; torch.ones((labels.shape[0], self.num_codebooks, 1)) * self.start_mel_token</span><br><span class="line">    # (1, codebooks, seq_len)</span><br><span class="line">    # add bos</span><br><span class="line">    labels &#x3D; torch.cat([bos_labels.to(labels.device), labels], dim&#x3D;-1)</span><br><span class="line"></span><br><span class="line">    labels, delay_pattern_mask &#x3D; self.build_delay_pattern_mask(</span><br><span class="line">        labels,</span><br><span class="line">        bos_token_id&#x3D;self.start_mel_token,</span><br><span class="line">        pad_token_id&#x3D;self.stop_mel_token,</span><br><span class="line">        max_length&#x3D;labels.shape[-1] + self.num_codebooks,</span><br><span class="line">        num_codebooks&#x3D;self.num_codebooks,</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    # the first ids of the delay pattern mask are precisely labels, we use the rest of the labels mask</span><br><span class="line">    # to take care of EOS</span><br><span class="line">    # we want labels to look like this:</span><br><span class="line">    #  - [B, a, b, E, E, E, E]</span><br><span class="line">    #  - [B, B, c, d, E, E, E]</span><br><span class="line">    #  - [B, B, B, e, f, E, E]</span><br><span class="line">    #  - [B, B, B, B, g, h, E]</span><br><span class="line">    labels &#x3D; torch.where(delay_pattern_mask &#x3D;&#x3D; -1, self.stop_mel_token, delay_pattern_mask)</span><br><span class="line"></span><br><span class="line">    # the first timestamp is associated to a row full of BOS, let&#39;s get rid of it</span><br><span class="line">    # we also remove the last timestampts (full of PAD)</span><br><span class="line">    # output &#x3D; &#123;&quot;labels&quot;: labels[:, 1:]&#125;</span><br><span class="line">    return labels[:, 1:]</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>切记在计算 Loss 中要 mask 由于 delay模式 pad 的开始符号和结束符号。仅仅保留最后一个结束符号就好了。同时不同VQ之间的损失最好也不要都设置成一样的，不利于模型收敛。可以按照一个客观指标判断每一层VQ的重要程度，然后设置对应的权重。44.1khz的DAC参考权重为[15, 12.66, 5.43, 2.92, 1.81, 1.48, 0.86, 0.85, 0.75]</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">speech_token, speech_token_target &#x3D; speech_token[:, :, :-1], speech_token</span><br><span class="line">temp_speech_token &#x3D; F.pad(speech_token, (1,0), value&#x3D;1024)</span><br><span class="line">speech_token_target &#x3D; speech_token_target.masked_fill(speech_token_target &#x3D;&#x3D; self.start_mel_token, -100)</span><br><span class="line">mask &#x3D; (temp_speech_token !&#x3D; self.stop_mel_token) &amp; ((speech_token_target !&#x3D; -100))</span><br><span class="line"></span><br><span class="line">loss_acc_dict &#x3D; &#123;&#125;</span><br><span class="line">total_loss &#x3D; torch.zeros([], device&#x3D;device)</span><br><span class="line">acc &#x3D; torch.zeros([], device&#x3D;device)</span><br><span class="line">for i in range(self.num_codebooks):</span><br><span class="line">    codebook_logits &#x3D; logits[:, i, :, :][mask[:, i, :]].view(speech_token_target.shape[0], -1, logits.shape[3])</span><br><span class="line">    codebook &#x3D; speech_token_target[:, i, :][mask[:, i, :]].view(speech_token_target.shape[0], -1)</span><br><span class="line">    codeloss &#x3D; self.criterion_ce(codebook_logits, codebook)</span><br><span class="line">    codeacc &#x3D; th_accuracy(codebook_logits.view(-1, self.speech_token_size + 3), codebook, ignore_label&#x3D;IGNORE_ID)</span><br><span class="line">    loss_acc_dict.update(&#123;f&#39;codeloss_&#123;i&#125;&#39;: codeloss,</span><br><span class="line">                            f&#39;codeacc&#123;i&#125;&#39;: codeacc&#125;)</span><br><span class="line">    # </span><br><span class="line">    if self.codebook_weights is not None:</span><br><span class="line">        total_loss +&#x3D; codeloss * self.codebook_weights[i]</span><br><span class="line">        acc +&#x3D; codeacc</span><br><span class="line">loss_acc_dict.update(&#123;&#39;loss&#39;: total_loss, &#39;acc&#39;: acc&#x2F;self.num_codebooks&#125;)</span><br></pre></td></tr></table></figure>
+<h3 id="推理阶段"><a class="markdownIt-Anchor" href="#推理阶段"></a> 推理阶段</h3>
+<ol>
+<li>采样过程要控制 logits，确保上一层VQ没有输出结束符号时，下一层VQ的结束符号概率强制设置为0；确保开始时候按照 Delay 的方式采样，也就是开始的时候后续几层的概率全为 pad 的那个 token。</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">class DACLogitsProcessor(LogitsProcessor):</span><br><span class="line">    def __init__(self, eos_token_id, pad_token_id, num_codebooks: int, batch_size: int, device: str &#x3D; &quot;cpu&quot;):</span><br><span class="line">        if not isinstance(eos_token_id, torch.Tensor):</span><br><span class="line">            if isinstance(eos_token_id, int):</span><br><span class="line">                eos_token_id &#x3D; [eos_token_id]</span><br><span class="line">            eos_token_id &#x3D; torch.tensor(eos_token_id, device&#x3D;device)</span><br><span class="line">        self.eos_token_id &#x3D; eos_token_id</span><br><span class="line">        self.pad_token_id &#x3D; pad_token_id</span><br><span class="line">        self.batch_size &#x3D; batch_size</span><br><span class="line">        # self.trunc_index &#x3D; trunc_index</span><br><span class="line"></span><br><span class="line">        if torch.is_floating_point(eos_token_id) or (eos_token_id &lt; 0).any():</span><br><span class="line">            raise ValueError(f&quot;&#96;eos_token_id&#96; has to be a list of positive integers, but is &#123;eos_token_id&#125;&quot;)</span><br><span class="line"></span><br><span class="line">        self.num_codebooks &#x3D; num_codebooks</span><br><span class="line">        self.device &#x3D; device</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        self.codebook_idx &#x3D; torch.arange(self.batch_size*self.num_codebooks, device&#x3D;self.device)</span><br><span class="line">        self.first_codebooks_unfinished &#x3D; torch.arange(batch_size, device&#x3D;device)*num_codebooks</span><br><span class="line">        </span><br><span class="line">        max_codebooks &#x3D; torch.arange(self.batch_size, device&#x3D;self.device)*self.num_codebooks + self.num_codebooks -1</span><br><span class="line">        self.max_codebooks &#x3D; max_codebooks</span><br><span class="line">        </span><br><span class="line">    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -&gt; torch.FloatTensor:</span><br><span class="line">        is_eos &#x3D; torch.isin(input_ids, self.eos_token_id).sum(1)</span><br><span class="line">        self.first_codebooks_unfinished &#x3D; torch.where((is_eos[self.first_codebooks_unfinished]&gt;0) &amp; (self.first_codebooks_unfinished&lt;self.max_codebooks), self.first_codebooks_unfinished+1, self.first_codebooks_unfinished)</span><br><span class="line">                </span><br><span class="line">        # every codebook higher than the first one unfinished will never be eos</span><br><span class="line">        eos_token_mask &#x3D; self.codebook_idx &gt; self.first_codebooks_unfinished.repeat_interleave(self.num_codebooks)</span><br><span class="line">        scores[eos_token_mask, self.eos_token_id] &#x3D; -math.inf</span><br><span class="line">        # from two codebook to nine code book, set pad_token_id</span><br><span class="line">        temp_score &#x3D; scores.clone()</span><br><span class="line">        pad_token_set &#x3D; self.codebook_idx &gt; input_ids.shape[1] - 1</span><br><span class="line">        scores[pad_token_set, :] &#x3D; -math.inf</span><br><span class="line">        scores[:, self.pad_token_id] &#x3D; temp_score[:, self.pad_token_id]</span><br><span class="line"></span><br><span class="line">        return scores</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>反向 Delay 获得最后的结果，然后通过 RVQ 的decoder得到最后的音频</li>
+</ol>
+<p>这里的主要代码参考了 <a target="_blank" rel="noopener" href="https://github.com/huggingface/parler-tts">parler-tts</a>，有小部分的修改。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/03/16/Data_Extract_DAC/" rel="prev" title="快速提取 DAC 的 Speech Token">
+      <i class="fa fa-chevron-left"></i> 快速提取 DAC 的 Speech Token
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E9%98%B6%E6%AE%B5"><span class="nav-number">1.</span> <span class="nav-text"> 训练阶段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E7%90%86%E9%98%B6%E6%AE%B5"><span class="nav-number">2.</span> <span class="nav-text"> 推理阶段</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Xin Yuan"
+      src="/images/me.jpg">
+  <p class="site-author-name" itemprop="name">Xin Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">24</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuan1615" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuan1615" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuan1615@163.com" title="E-Mail → mailto:yuan1615@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Xin Yuan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
