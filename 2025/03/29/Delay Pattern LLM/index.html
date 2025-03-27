@@ -21,15 +21,15 @@
     var CONFIG = {"hostname":"yuan1615.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen（https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
+  <meta name="description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Delay Pattern LLM">
 <meta property="og:url" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/index.html">
 <meta property="og:site_name" content="1615">
-<meta property="og:description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen（https:&#x2F;&#x2F;arxiv.org&#x2F;pdf&#x2F;2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
+<meta property="og:description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-03-29T11:45:16.000Z">
-<meta property="article:modified_time" content="2025-03-27T15:27:14.525Z">
+<meta property="article:modified_time" content="2025-03-27T15:29:22.807Z">
 <meta property="article:author" content="Xin Yuan">
 <meta property="article:tag" content="LLM">
 <meta name="twitter:card" content="summary">
@@ -197,7 +197,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-03-27 23:27:14" itemprop="dateModified" datetime="2025-03-27T23:27:14+08:00">2025-03-27</time>
+                <time title="Modified: 2025-03-27 23:29:22" itemprop="dateModified" datetime="2025-03-27T23:29:22+08:00">2025-03-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -220,7 +220,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>最早看到 Delay Pattern 应该是 meta 在 musicgen（<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.05284%EF%BC%89%E4%B8%AD%E6%8F%90%E5%87%BA%E7%9A%84%EF%BC%8C%E4%B8%BB%E8%A6%81%E5%B0%B1%E6%98%AF%E9%9F%B3%E9%A2%91%E7%BC%96%E8%A7%A3%E7%A0%81%E5%99%A8%E6%98%AFRVQ%E7%9A%84%E5%BD%A2%E5%BC%8F%EF%BC%8C%E8%BF%99%E4%B8%AA%E6%97%B6%E5%80%99%E6%80%8E%E4%B9%88%E5%88%A9%E7%94%A8LLM%E5%B0%B1%E4%BC%9A%E6%9C%89%E5%BE%88%E5%A4%9A%E7%A7%8D%E4%B8%8D%E5%90%8C%E7%9A%84%E5%BA%8F%E5%88%97%E6%9E%84%E9%80%A0%E6%96%B9%E5%BC%8F%EF%BC%8C%E5%BD%93%E6%97%B6">https://arxiv.org/pdf/2306.05284）中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时</a> musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。</p>
+        <p>最早看到 Delay Pattern 应该是 meta 在 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.05284">musicgen</a>中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。</p>
 <span id="more"></span>
 <p>整体的对比图如下所示，后续很多工作（主要是涉及到利用 RVQ的）陆续开始使用 Delay LLM，如Parler-tts、audiocraft等。另一种方式也有一个，就是利用 RQ-Transformer；这个后续介绍。</p>
 <p>![Delay Pattern LLM-1](Delay Pattern LLM-1.png)<br>
