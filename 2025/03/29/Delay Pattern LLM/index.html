@@ -28,11 +28,15 @@
 <meta property="og:site_name" content="1615">
 <meta property="og:description" content="最早看到 Delay Pattern 应该是 meta 在 musicgen中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png">
+<meta property="og:image" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png">
 <meta property="article:published_time" content="2025-03-29T11:45:16.000Z">
-<meta property="article:modified_time" content="2025-03-27T15:29:22.807Z">
+<meta property="article:modified_time" content="2025-03-27T15:32:04.703Z">
 <meta property="article:author" content="Xin Yuan">
 <meta property="article:tag" content="LLM">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png">
 
 <link rel="canonical" href="https://yuan1615.github.io/2025/03/29/Delay%20Pattern%20LLM/">
 
@@ -197,7 +201,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-03-27 23:29:22" itemprop="dateModified" datetime="2025-03-27T23:29:22+08:00">2025-03-27</time>
+                <time title="Modified: 2025-03-27 23:32:04" itemprop="dateModified" datetime="2025-03-27T23:32:04+08:00">2025-03-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -223,9 +227,9 @@
         <p>最早看到 Delay Pattern 应该是 meta 在 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.05284">musicgen</a>中提出的，主要就是音频编解码器是RVQ的形式，这个时候怎么利用LLM就会有很多种不同的序列构造方式，当时 musicgen 里面对比了多种方式。总体实验下来 Delay 模式在效果和速度方面得到了一个很好的平衡。</p>
 <span id="more"></span>
 <p>整体的对比图如下所示，后续很多工作（主要是涉及到利用 RVQ的）陆续开始使用 Delay LLM，如Parler-tts、audiocraft等。另一种方式也有一个，就是利用 RQ-Transformer；这个后续介绍。</p>
-<p>![Delay Pattern LLM-1](Delay Pattern LLM-1.png)<br>
-![Delay Pattern LLM-2](Delay Pattern LLM-1.png)<br>
-![Delay Pattern LLM-2](Delay Pattern LLM-1.png)</p>
+<p><img src="/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png" alt="Delay Pattern LLM-1"><br>
+<img src="/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png" alt="Delay Pattern LLM-2"><br>
+<img src="/2025/03/29/Delay%20Pattern%20LLM/DelayPatternLLM-1.png" alt="Delay Pattern LLM-2"></p>
 <p>这种 Delay 方式就是在构造训练数据和推理的时候需要注意一下，其他基本都是一致的。</p>
 <h3 id="训练阶段"><a class="markdownIt-Anchor" href="#训练阶段"></a> 训练阶段</h3>
 <ol>
